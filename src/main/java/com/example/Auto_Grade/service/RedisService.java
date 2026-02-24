@@ -15,8 +15,8 @@ public class RedisService {
         redisTemplate.opsForValue().set(key, value);
     }
 
-    public void setWithTTL(String key, Object value, long seconds) {
-        redisTemplate.opsForValue().set(key, value, seconds, TimeUnit.SECONDS);
+    public void setWithTTL(String key, Object value, long duration, TimeUnit unit) {
+        redisTemplate.opsForValue().set(key, value, duration, unit);
     }
 
     public Object get(String key) {
@@ -25,5 +25,9 @@ public class RedisService {
 
     public void delete(String key) {
         redisTemplate.delete(key);
+    }
+
+    public boolean hasKey(String key) {
+        return redisTemplate.hasKey(key);
     }
 }

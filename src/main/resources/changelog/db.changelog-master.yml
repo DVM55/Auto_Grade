@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-tables
+      author: vanmanh
+      changes:
+        - sqlFile:
+            path: changelog/ddl/changelog-0001.sql

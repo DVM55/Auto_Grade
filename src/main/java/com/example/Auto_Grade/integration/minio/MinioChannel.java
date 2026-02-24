@@ -147,7 +147,7 @@ public class MinioChannel {
         try {
             String url = presignedGetUrl(objectKey, ttlSeconds);
 
-            redisService.setWithTTL(redisKey, url, ttlSeconds);
+            redisService.setWithTTL(redisKey, url, ttlSeconds, java.util.concurrent.TimeUnit.SECONDS);
 
             return url;
         } catch (Exception e) {
