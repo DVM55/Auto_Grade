@@ -2,6 +2,7 @@ package com.example.Auto_Grade.controller;
 
 import com.example.Auto_Grade.dto.req.ClassRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
+import com.example.Auto_Grade.dto.res.ClassDetailResponse;
 import com.example.Auto_Grade.dto.res.ClassResponse;
 import com.example.Auto_Grade.service.ClassService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -83,6 +84,22 @@ public class ClassController {
                         .code(HttpServletResponse.SC_OK)
                         .message("Lấy danh sách lớp thành công")
                         .data(classService.getClasses(title, classCode, page, size))
+                        .build()
+        );
+    }
+
+    @GetMapping("/code/{classCode}")
+    public ResponseEntity<ApiResponse<ClassDetailResponse>> getClassByCode(
+            @PathVariable String classCode) {
+
+        ClassDetailResponse response =
+                classService.getClassDetailByCode(classCode);
+
+        return ResponseEntity.ok(
+                ApiResponse.<ClassDetailResponse>builder()
+                        .code(HttpServletResponse.SC_OK)
+                        .message("Lấy thông tin lớp thành công")
+                        .data(response)
                         .build()
         );
     }
