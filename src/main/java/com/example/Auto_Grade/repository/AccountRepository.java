@@ -25,7 +25,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
         a.id AS id,
         a.email AS email,
         a.username AS username,
-        a.object_key AS objectKey,
+        a.object_key AS "object_key",
         ud.phone AS phone,
         ud.date_of_birth AS date_of_birth,
         ud.address AS address,

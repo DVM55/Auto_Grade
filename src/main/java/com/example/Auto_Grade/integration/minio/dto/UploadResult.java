@@ -15,4 +15,6 @@ public class UploadResult {
     private String uploadUrl;
     private FileType fileType;
     private String fileName;
+    private  String contentType;
+    private Long fileSize;
 }

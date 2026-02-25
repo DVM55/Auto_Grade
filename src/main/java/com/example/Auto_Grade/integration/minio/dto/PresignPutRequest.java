@@ -6,4 +6,5 @@ import lombok.Data;
 public class PresignPutRequest {
     private String fileName;
     private String contentType;
+    private Long fileSize;
 }

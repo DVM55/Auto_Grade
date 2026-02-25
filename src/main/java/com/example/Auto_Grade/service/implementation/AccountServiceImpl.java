@@ -172,6 +172,7 @@ public class AccountServiceImpl implements AccountService {
         Long currentUserId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Map<String,Object> map = accountRepository.findAccountDetail(currentUserId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy tài khoản với id: " + currentUserId));
+        System.out.println(map.get("object_key"));
         return ProfilePersonalResponse.builder()
                 .id((Long) map.get("id"))
                 .username((String) map.get("username"))

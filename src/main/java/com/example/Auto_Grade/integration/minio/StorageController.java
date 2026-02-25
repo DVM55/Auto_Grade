@@ -38,6 +38,8 @@ public class StorageController {
                     .uploadUrl(url)
                     .fileType(fileType)
                     .fileName(file.getFileName())
+                    .contentType(file.getContentType())
+                    .fileSize(file.getFileSize())
                     .build()
             );
         }
@@ -53,6 +55,7 @@ public class StorageController {
      */
     public static FileType mapContentTypeToFileType(String contentType) {
         if (contentType.startsWith("image/")) return FileType.IMAGE;
+        if (contentType.startsWith("video/")) return FileType.VIDEO;
 
         // các file còn lại xem như FILE
         return FileType.FILE;

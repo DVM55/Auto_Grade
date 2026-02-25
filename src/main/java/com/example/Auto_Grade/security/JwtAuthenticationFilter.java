@@ -80,7 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         List<String> excludedPaths = List.of(
-                "api/v1/auth/**",
+                "/api/v1/auth",
                 "/ws",
                 "/swagger-ui",
                 "/v3/api-docs",
