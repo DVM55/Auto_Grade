@@ -1,9 +1,11 @@
 package com.example.Auto_Grade.service.implementation;
 
 import com.example.Auto_Grade.dto.req.ClassRequest;
+import com.example.Auto_Grade.dto.res.ClassDetailResponse;
 import com.example.Auto_Grade.dto.res.ClassResponse;
 import com.example.Auto_Grade.entity.Account;
 import com.example.Auto_Grade.entity.Class;
+import com.example.Auto_Grade.enums.JoinStatus;
 import com.example.Auto_Grade.enums.MemberStatus;
 import com.example.Auto_Grade.mapper.ClassMapper;
 import com.example.Auto_Grade.repository.AccountRepository;
@@ -18,6 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 import java.util.Random;
 
 @Service
@@ -144,6 +148,44 @@ public class ClassServiceImpl implements ClassService {
         }
 
         return code;
+    }
+
+    @Override
+    public ClassDetailResponse getClassDetailByCode(String classCode) {
+
+        Long userId = (Long) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
+
+        Class clazz = classRepository.findByClassCode(classCode)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Không tìm thấy lớp với mã: " + classCode));
+
+        Long memberCount = classMemberRepository
+                .countByClassEntityIdAndStatus(clazz.getId(), MemberStatus.APPROVED);
+
+        Optional<MemberStatus> statusOpt =
+                classMemberRepository.findStatusByClassAndUser(clazz.getId(), userId);
+
+        JoinStatus joinStatus = JoinStatus.NOT_JOINED;
+
+        if (statusOpt.isPresent()) {
+            if (statusOpt.get() == MemberStatus.APPROVED) {
+                joinStatus = JoinStatus.JOINED;
+            } else if (statusOpt.get() == MemberStatus.PENDING) {
+                joinStatus = JoinStatus.PENDING_APPROVAL;
+            }
+        }
+
+        return ClassDetailResponse.builder()
+                .id(clazz.getId())
+                .classCode(clazz.getClassCode())
+                .title(clazz.getTitle())
+                .description(clazz.getDescription())
+                .memberCount(memberCount)
+                .joinStatus(joinStatus)
+                .build();
     }
 
     private ClassResponse mapToResponse(Class clazz) {

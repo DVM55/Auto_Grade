@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface ClassMemberRepository extends JpaRepository<ClassMember, Long> {
     long countByClassEntityIdAndStatus(Long classId, MemberStatus status);
 
@@ -39,5 +41,16 @@ public interface ClassMemberRepository extends JpaRepository<ClassMember, Long> 
             Long classId,
             Long accountId,
             MemberStatus status
+    );
+
+    @Query("""
+    SELECT cm.status
+    FROM ClassMember cm
+    WHERE cm.classEntity.id = :classId
+    AND cm.account.id = :userId
+""")
+    Optional<MemberStatus> findStatusByClassAndUser(
+            @Param("classId") Long classId,
+            @Param("userId") Long userId
     );
 }
