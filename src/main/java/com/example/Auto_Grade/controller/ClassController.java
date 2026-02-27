@@ -103,4 +103,20 @@ public class ClassController {
                         .build()
         );
     }
+
+    // ================= GET BY ID =================
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<com.example.Auto_Grade.entity.Class>> getClassById(
+            @PathVariable Long id) {
+
+        com.example.Auto_Grade.entity.Class response = classService.getClassById(id);
+
+        return ResponseEntity.ok(
+                ApiResponse.<com.example.Auto_Grade.entity.Class>builder()
+                        .code(HttpServletResponse.SC_OK)
+                        .message("Lấy thông tin lớp thành công")
+                        .data(response)
+                        .build()
+        );
+    }
 }

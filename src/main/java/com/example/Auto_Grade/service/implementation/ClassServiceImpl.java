@@ -188,6 +188,12 @@ public class ClassServiceImpl implements ClassService {
                 .build();
     }
 
+    @Override
+    public Class getClassById(Long id) {
+        return classRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy lớp với id: " + id));
+    }
+
     private ClassResponse mapToResponse(Class clazz) {
 
         long approvedCount = classMemberRepository

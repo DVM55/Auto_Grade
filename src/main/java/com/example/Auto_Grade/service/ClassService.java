@@ -3,6 +3,7 @@ package com.example.Auto_Grade.service;
 import com.example.Auto_Grade.dto.req.ClassRequest;
 import com.example.Auto_Grade.dto.res.ClassDetailResponse;
 import com.example.Auto_Grade.dto.res.ClassResponse;
+import com.example.Auto_Grade.entity.Class;
 import org.springframework.data.domain.Page;
 
 public interface ClassService {
@@ -17,5 +18,7 @@ public interface ClassService {
     );
 
     ClassDetailResponse getClassDetailByCode(String classCode);
+
+    Class getClassById(Long id);
 
 }

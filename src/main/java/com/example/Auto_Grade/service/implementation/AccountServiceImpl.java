@@ -168,18 +168,32 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public ProfilePersonalResponse getProfilePersonal(){
-        Long currentUserId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Map<String,Object> map = accountRepository.findAccountDetail(currentUserId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy tài khoản với id: " + currentUserId));
-        System.out.println(map.get("object_key"));
+    public ProfilePersonalResponse getProfilePersonal() {
+
+        Long currentUserId = (Long) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
+
+        Map<String,Object> map = accountRepository
+                .findAccountDetail(currentUserId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Không tìm thấy tài khoản với id: " + currentUserId));
+
+        Object value = map.get("date_of_birth");
+
+        LocalDate dob = value != null
+                ? ((java.sql.Date) value).toLocalDate()
+                : null;
+
         return ProfilePersonalResponse.builder()
                 .id((Long) map.get("id"))
                 .username((String) map.get("username"))
                 .email((String) map.get("email"))
-                .avatarUrl(minioChannel.getPresignedUrlSafe((String) map.get("object_key"), 86400))
+                .avatarUrl(minioChannel.getPresignedUrlSafe(
+                        (String) map.get("object_key"), 86400))
                 .phone((String) map.get("phone"))
-                .date_of_birth((LocalDate) map.get("date_of_birth"))
+                .date_of_birth(dob) // ✅ đã convert đúng
                 .address((String) map.get("address"))
                 .gender((String) map.get("gender"))
                 .build();

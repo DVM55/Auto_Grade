@@ -16,7 +16,10 @@ import java.security.Key;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
@@ -140,14 +143,18 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
+    @Transactional
     public void blacklistToken(String token) {
         long expirationTime = getExpirationTime(token); // epoch ms
         long currentTime = System.currentTimeMillis();
 
         long ttlMillis = expirationTime - currentTime;
+        Long userId = extractUserIdIgnoreExpiration(token);
 
         if (ttlMillis <= 0) {
-            return; // token đã hết hạn, không cần blacklist
+            log.warn("Token đã hết hạn → không cần blacklist");
+            keyRepository.deleteByAccount_Id(userId);
+            return;
         }
 
         String key = BLACKLIST_PREFIX + token;
@@ -159,7 +166,7 @@ public class JwtServiceImpl implements JwtService {
                 TimeUnit.MILLISECONDS
         );
 
-        keyRepository.deleteByAccount_Id(extractUserIdIgnoreExpiration(token));
+        keyRepository.deleteByAccount_Id(userId);
     }
 
 

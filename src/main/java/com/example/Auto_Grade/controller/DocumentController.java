@@ -3,6 +3,7 @@ package com.example.Auto_Grade.controller;
 import com.example.Auto_Grade.dto.req.DocumentRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
 import com.example.Auto_Grade.dto.res.DocumentResponse;
+import com.example.Auto_Grade.entity.Document;
 import com.example.Auto_Grade.service.DocumentService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -82,6 +83,22 @@ public class DocumentController {
                         .code(HttpServletResponse.SC_OK)
                         .message("Lấy danh sách tài liệu thành công")
                         .data(response)
+                        .build()
+        );
+    }
+
+    // ================= GET DETAIL =================
+    @GetMapping("/{documentId}")
+    public ResponseEntity<ApiResponse<Document>> getDocumentById(
+            @PathVariable Long documentId) {
+
+        Document document = documentService.getDocumentById(documentId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<Document>builder()
+                        .code(HttpServletResponse.SC_OK)
+                        .message("Lấy chi tiết tài liệu thành công")
+                        .data(document)
                         .build()
         );
     }

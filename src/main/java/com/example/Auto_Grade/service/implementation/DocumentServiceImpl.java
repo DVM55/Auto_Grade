@@ -103,6 +103,12 @@ public class DocumentServiceImpl implements DocumentService {
                 .map(this::toResponse);
     }
 
+    @Override
+    public Document getDocumentById(Long documentId) {
+        return documentRepository.findById(documentId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy lớp với id: " + documentId));
+    }
+
     public DocumentResponse toResponse(Document document) {
         return DocumentResponse.builder()
                 .id(document.getId())

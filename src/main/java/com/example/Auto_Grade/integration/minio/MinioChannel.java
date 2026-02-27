@@ -1,6 +1,6 @@
 package com.example.Auto_Grade.integration.minio;
 
-import com.example.Auto_Grade.service.RedisService;
+
 import io.minio.*;
 
 import jakarta.annotation.PostConstruct;
@@ -22,7 +22,7 @@ public class MinioChannel {
 
     private final MinioProps props;
     private final MinioClient minioClient;
-    private final RedisService redisService;
+
 
     @PostConstruct
     private void init() {
@@ -137,19 +137,10 @@ public class MinioChannel {
             return null;
         }
 
-        String redisKey = "presigned:" + objectKey;
-
-        String cachedUrl = (String) redisService.get(redisKey);
-        if (cachedUrl != null) {
-            return cachedUrl;
-        }
+        System.out.println("ObjectKey: " + objectKey);
 
         try {
-            String url = presignedGetUrl(objectKey, ttlSeconds);
-
-            redisService.setWithTTL(redisKey, url, ttlSeconds, java.util.concurrent.TimeUnit.SECONDS);
-
-            return url;
+             return presignedGetUrl(objectKey, ttlSeconds);
         } catch (Exception e) {
             return null;
         }
