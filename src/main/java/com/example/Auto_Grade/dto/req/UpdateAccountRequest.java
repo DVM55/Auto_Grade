@@ -4,7 +4,6 @@ import com.example.Auto_Grade.enums.Gender;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 
@@ -14,10 +13,6 @@ import java.time.LocalDate;
 public class UpdateAccountRequest {
     @NotBlank(message = "Username không được để trống")
     private String username;
-
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
-    private String email;
 
     @Pattern(
             regexp = "^0\\d{9}$",

@@ -9,6 +9,7 @@ import com.example.Auto_Grade.dto.res.ProfilePersonalResponse;
 import com.example.Auto_Grade.dto.res.UpdateAccountResponse;
 import com.example.Auto_Grade.enums.Role;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface AccountService {
     void deleteAccountById(Long id);
@@ -21,7 +22,8 @@ public interface AccountService {
 
     UpdateAccountResponse updateAccount(UpdateAccountRequest updateAccountRequest);
 
-    Page<AccountResponse> getAccountsByRole(Role role, int page, int size);
+    Page<AccountResponse> getAccountsByRole(Role role, int page, int size, String username,
+                                            String email);
 
     ProfilePersonalResponse getProfilePersonal();
 }

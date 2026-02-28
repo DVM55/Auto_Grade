@@ -18,7 +18,25 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
 
-    Page<Account> findByRole(Role role, Pageable pageable);
+    @Query("""
+    SELECT a
+    FROM Account a
+    WHERE a.role = :role
+    AND LOWER(function('unaccent', a.username))
+        LIKE LOWER(function('unaccent',
+            CONCAT('%', CAST(COALESCE(:username, '') as string), '%')
+        ))
+    AND LOWER(function('unaccent', a.email))
+        LIKE LOWER(function('unaccent',
+            CONCAT('%', CAST(COALESCE(:email, '') as string), '%')
+        ))
+""")
+    Page<Account> findByRoleAndFilters(
+            @Param("role") Role role,
+            @Param("username") String username,
+            @Param("email") String email,
+            Pageable pageable
+    );
 
     @Query(value = """
     SELECT 

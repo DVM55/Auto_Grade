@@ -112,6 +112,8 @@ public class AccountController {
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<?>> getUsers(
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
@@ -119,7 +121,7 @@ public class AccountController {
                 ApiResponse.builder()
                         .code(HttpServletResponse.SC_OK)
                         .message("Lấy danh sách USER thành công")
-                        .data(accountService.getAccountsByRole(Role.USER, page, size))
+                        .data(accountService.getAccountsByRole(Role.USER, page, size, username, email))
                         .build()
         );
     }
@@ -127,6 +129,8 @@ public class AccountController {
     @GetMapping("/teachers")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<?>> getTeachers(
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
@@ -134,7 +138,7 @@ public class AccountController {
                 ApiResponse.builder()
                         .code(HttpServletResponse.SC_OK)
                         .message("Lấy danh sách TEACHER thành công")
-                        .data(accountService.getAccountsByRole(Role.TEACHER, page, size))
+                        .data(accountService.getAccountsByRole(Role.TEACHER, page, size, username, email))
                         .build()
         );
     }

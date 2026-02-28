@@ -116,11 +116,6 @@ public class AccountServiceImpl implements AccountService {
             throw new IllegalArgumentException("Tên người dùng đã tồn tại");
         }
 
-        if (!currentAccount.getEmail().equals(req.getEmail())
-                && accountRepository.existsByEmail(req.getEmail())) {
-            throw new IllegalArgumentException("Email đã được sử dụng");
-        }
-
         // cập nhật dữ liệu account
         accountMapper.updateAccountFromDTO(req, currentAccount);
 
@@ -152,10 +147,10 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Page<AccountResponse> getAccountsByRole(Role role, int page, int size) {
+    public Page<AccountResponse> getAccountsByRole(Role role, int page, int size, String username, String email) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
 
-        Page<Account> accountPage = accountRepository.findByRole(role, pageable);
+        Page<Account> accountPage = accountRepository.findByRoleAndFilters(role, username, email, pageable);
 
         return accountPage.map(account -> AccountResponse.builder()
                 .id(account.getId())
