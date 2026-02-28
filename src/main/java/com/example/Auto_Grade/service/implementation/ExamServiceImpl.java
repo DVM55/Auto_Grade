@@ -28,14 +28,14 @@ public class ExamServiceImpl implements ExamService {
     public void deleteExamById(Long id) {
         Exam exam = examRepository.findById(id)
                 .orElseThrow(() ->
-                        new EntityNotFoundException("Không tìm thấy đợt thi với id: " + id)
+                        new EntityNotFoundException("Không tìm thấy kỳ thi với id: " + id)
                 );
 
         Account currentAccount = getCurrentAccount();
 
         // Kiểm tra quyền
         if (!exam.getCreator().getId().equals(currentAccount.getId())) {
-            throw new AccessDeniedException("Bạn không có quyền xoá đợt thi này");
+            throw new AccessDeniedException("Bạn không có quyền xoá kỳ thi này");
         }
 
         examRepository.delete(exam);
@@ -44,7 +44,7 @@ public class ExamServiceImpl implements ExamService {
     @Override
     public void createExam(ExamRequest examRequest) {
         if (examRepository.existsByName(examRequest.getName())) {
-            throw new IllegalArgumentException("Tên đợt thi đã tồn tại");
+            throw new IllegalArgumentException("Tên kỳ thi đã tồn tại");
         }
 
         Account currentAccount = getCurrentAccount();
@@ -61,29 +61,24 @@ public class ExamServiceImpl implements ExamService {
     public ExamResponse updateExam(Long id, ExamRequest examRequest) {
         Exam exam = examRepository.findById(id)
                 .orElseThrow(() ->
-                        new EntityNotFoundException("Không tìm thấy đợt thi với id: " + id)
+                        new EntityNotFoundException("Không tìm thấy kỳ thi với id: " + id)
                 );
 
         Account currentAccount = getCurrentAccount();
 
         // Kiểm tra quyền
         if (!exam.getCreator().getId().equals(currentAccount.getId())) {
-            throw new AccessDeniedException("Bạn không có quyền xoá đợt thi này");
+            throw new AccessDeniedException("Bạn không có quyền xoá kỳ thi này");
         }
 
         if (examRepository.existsByName(examRequest.getName())) {
-            throw new IllegalArgumentException("Tên đợt thi đã tồn tại");
+            throw new IllegalArgumentException("Tên kỳ thi đã tồn tại");
         }
 
         exam.setName(examRequest.getName());
         examRepository.save(exam);
 
-        return ExamResponse.builder()
-                .id(exam.getId())
-                .name(exam.getName())
-                .createdAt(exam.getCreatedAt())
-                .updatedAt(exam.getUpdatedAt())
-                .build();
+        return mapToResponse(exam);
     }
 
     @Override

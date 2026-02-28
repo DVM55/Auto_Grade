@@ -30,7 +30,7 @@ public class ExamController {
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
                         .code(HttpServletResponse.SC_OK)
-                        .message("Tạo đợt thi thành công")
+                        .message("Tạo kỳ thi thành công")
                         .data(null)
                         .build()
         );
@@ -48,7 +48,7 @@ public class ExamController {
         return ResponseEntity.ok(
                 ApiResponse.<ExamResponse>builder()
                         .code(HttpServletResponse.SC_OK)
-                        .message("Cập nhật đợt thi thành công")
+                        .message("Cập nhật kỳ thi thành công")
                         .data(response)
                         .build()
         );
@@ -65,7 +65,7 @@ public class ExamController {
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
                         .code(HttpServletResponse.SC_OK)
-                        .message("Xóa đợt thi thành công")
+                        .message("Xóa kỳ thi thành công")
                         .data(null)
                         .build()
         );
@@ -85,7 +85,7 @@ public class ExamController {
         return ResponseEntity.ok(
                 ApiResponse.<Page<ExamResponse>>builder()
                         .code(HttpServletResponse.SC_OK)
-                        .message("Lấy danh sách đợt thi thành công")
+                        .message("Lấy danh sách kỳ thi thành công")
                         .data(response)
                         .build()
         );
