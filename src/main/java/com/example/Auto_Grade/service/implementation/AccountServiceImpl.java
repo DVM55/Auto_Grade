@@ -9,6 +9,7 @@ import com.example.Auto_Grade.dto.res.ProfilePersonalResponse;
 import com.example.Auto_Grade.dto.res.UpdateAccountResponse;
 import com.example.Auto_Grade.entity.Account;
 import com.example.Auto_Grade.entity.UserDetail;
+import com.example.Auto_Grade.enums.Gender;
 import com.example.Auto_Grade.enums.Role;
 import com.example.Auto_Grade.integration.minio.MinioChannel;
 import com.example.Auto_Grade.mapper.AccountMapper;
@@ -24,6 +25,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -99,27 +101,22 @@ public class AccountServiceImpl implements AccountService {
                     .build();
 
         } catch (IOException e) {
-            throw new RuntimeException("Không thể đọc dữ liệu từ file upload", e);
-
+            throw new IllegalArgumentException("Không thể đọc dữ liệu từ file upload", e);
         } catch (Exception e) {
-            throw new RuntimeException("Upload avatar thất bại", e);
+            throw new RuntimeException("Lỗi khi upload file lên MinIO", e);
         }
-
     }
 
     @Override
+    @Transactional
     public UpdateAccountResponse updateAccount(UpdateAccountRequest req) {
+
         Account currentAccount = getCurrentAccount();
 
-        if (!currentAccount.getUsername().equals(req.getUsername())
-                && accountRepository.existsByUsername(req.getUsername())) {
-            throw new IllegalArgumentException("Tên người dùng đã tồn tại");
-        }
+        // ===== UPDATE ACCOUNT =====
+        currentAccount.setUsername(req.getUsername());
 
-        // cập nhật dữ liệu account
-        accountMapper.updateAccountFromDTO(req, currentAccount);
-
-        // lấy hoặc tạo mới UserDetail
+        // ===== LẤY HOẶC TẠO USER DETAIL =====
         UserDetail userDetail = userDetailRepository
                 .findByAccountId(currentAccount.getId())
                 .orElseGet(() -> {
@@ -128,10 +125,25 @@ public class AccountServiceImpl implements AccountService {
                     return ud;
                 });
 
-        // cập nhật dữ liệu userDetail
-        accountMapper.updateUserDetailFromDTO(req, userDetail);
+        // ===== UPDATE USER DETAIL =====
+        userDetail.setPhone(req.getPhone());
+        userDetail.setAddress(req.getAddress());
+        userDetail.setDate_of_birth(req.getDate_of_birth());
 
-        // save
+        // ===== HANDLE GENDER =====
+        if (req.getGender() == null || req.getGender().isBlank()) {
+            userDetail.setGender(null);
+        } else {
+            try {
+                userDetail.setGender(
+                        Gender.valueOf(req.getGender().toUpperCase())
+                );
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Giới tính không hợp lệ");
+            }
+        }
+
+        // ===== SAVE =====
         userDetailRepository.save(userDetail);
         accountRepository.save(currentAccount);
 
@@ -141,7 +153,11 @@ public class AccountServiceImpl implements AccountService {
                 .email(currentAccount.getEmail())
                 .phone(userDetail.getPhone())
                 .address(userDetail.getAddress())
-                .gender(userDetail.getGender().name())
+                .gender(
+                        userDetail.getGender() != null
+                                ? userDetail.getGender().name()
+                                : null
+                )
                 .date_of_birth(userDetail.getDate_of_birth())
                 .build();
     }

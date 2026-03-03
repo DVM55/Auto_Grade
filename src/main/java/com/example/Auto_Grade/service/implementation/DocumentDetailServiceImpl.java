@@ -10,6 +10,7 @@ import com.example.Auto_Grade.enums.MemberStatus;
 import com.example.Auto_Grade.integration.minio.MinioChannel;
 import com.example.Auto_Grade.repository.*;
 import com.example.Auto_Grade.service.DocumentDetailService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -43,7 +44,7 @@ public class DocumentDetailServiceImpl implements DocumentDetailService {
 
         Document document = documentRepository.findById(documentId)
                 .orElseThrow(() ->
-                        new RuntimeException("Không tìm thấy thư mục với id: " + documentId)
+                        new EntityNotFoundException("Không tìm thấy thư mục với id: " + documentId)
                 );
 
         // 🔐 CHECK QUYỀN
@@ -79,7 +80,7 @@ public class DocumentDetailServiceImpl implements DocumentDetailService {
 
         DocumentDetail documentDetail = documentDetailRepository.findById(documentDetailId)
                 .orElseThrow(() ->
-                        new RuntimeException("Không tìm thấy tài liệu với id: " + documentDetailId)
+                        new EntityNotFoundException("Không tìm thấy tài liệu với id: " + documentDetailId)
                 );
 
         // 🔐 CHECK QUYỀN
@@ -103,7 +104,7 @@ public class DocumentDetailServiceImpl implements DocumentDetailService {
 
         DocumentDetail documentDetail = documentDetailRepository.findById(documentDetailId)
                 .orElseThrow(() ->
-                        new RuntimeException("Không tìm thấy tài liệu với id: " + documentDetailId)
+                        new EntityNotFoundException("Không tìm thấy tài liệu với id: " + documentDetailId)
                 );
 
         // 🔐 CHECK QUYỀN
@@ -129,7 +130,7 @@ public class DocumentDetailServiceImpl implements DocumentDetailService {
 
         Document document = documentRepository.findById(documentId)
                 .orElseThrow(() ->
-                        new RuntimeException("Không tìm thấy thư mục với id: " + documentId)
+                        new EntityNotFoundException("Không tìm thấy thư mục với id: " + documentId)
                 );
 
         Long classId = document.getClassEntity().getId();
@@ -166,6 +167,6 @@ public class DocumentDetailServiceImpl implements DocumentDetailService {
     private Account getCurrentUser() {
         Long accountId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+                .orElseThrow(() -> new EntityNotFoundException("User không tồn tại"));
     }
 }

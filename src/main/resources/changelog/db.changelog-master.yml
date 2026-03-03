@@ -41,3 +41,9 @@ databaseChangeLog:
       changes:
         - sqlFile:
             path: changelog/ddl/changelog-0007.sql
+  - changeSet:
+      id: create-tables-8
+      author: vanmanh
+      changes:
+        - sqlFile:
+            path: changelog/ddl/changelog-0008.sql

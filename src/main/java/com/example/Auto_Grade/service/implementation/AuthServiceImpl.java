@@ -11,7 +11,7 @@ import com.example.Auto_Grade.repository.KeyRepository;
 import com.example.Auto_Grade.service.AuthService;
 import com.example.Auto_Grade.service.JwtService;
 import com.example.Auto_Grade.service.OtpService;
-import com.example.Auto_Grade.service.RedisService;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,7 +31,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final KeyRepository keyRepository;
     private final OtpService otpService;
-    private final RedisService redisService;
+
 
     @Override
     public void register(RegisterRequest request) {
@@ -39,12 +39,16 @@ public class AuthServiceImpl implements AuthService {
             throw new ConflictException("Email đã được sử dụng");
         }
 
-        if (accountRepository.existsByUsername(request.getUsername())) {
-            throw new ConflictException("Username đã được sử dụng");
+        Role role;
+        try {
+            role = Role.valueOf(request.getRole().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Role không hợp lệ");
         }
 
-        if (!Role.isValidRole(request.getRole())) {
-            throw new IllegalArgumentException("Role không hợp lệ");
+        // ✅ Chỉ cho phép USER và TEACHER
+        if (role != Role.USER && role != Role.TEACHER) {
+            throw new IllegalArgumentException("Chỉ được đăng ký với role USER hoặc TEACHER");
         }
 
         Account account = Account.builder()

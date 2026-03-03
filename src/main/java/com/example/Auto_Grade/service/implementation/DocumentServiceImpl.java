@@ -122,6 +122,6 @@ public class DocumentServiceImpl implements DocumentService {
     private Account getCurrentUser() {
         Long accountId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+                .orElseThrow(() -> new EntityNotFoundException("User không tồn tại"));
     }
 }

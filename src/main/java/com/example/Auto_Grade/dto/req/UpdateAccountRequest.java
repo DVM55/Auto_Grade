@@ -20,7 +20,7 @@ public class UpdateAccountRequest {
     )
     private String phone;
 
-    private Gender gender;
+    private String gender;
 
     @Past(message = "Ngày sinh phải trước ngày hiện tại")
     private LocalDate date_of_birth;

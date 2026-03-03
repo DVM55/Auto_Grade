@@ -124,7 +124,7 @@ public class CandidateServiceImpl implements CandidateService {
             candidateRepository.saveAll(candidates);
 
         } catch (IOException e) {
-            throw new RuntimeException("Không đọc được file Excel", e);
+            throw new IllegalArgumentException("Không đọc được file Excel", e);
         }
     }
 
@@ -369,10 +369,6 @@ public class CandidateServiceImpl implements CandidateService {
         List<Candidate> candidates =
                 candidateRepository.findAllByExam_IdOrderByIdAsc(examId);
 
-        if (candidates.isEmpty()) {
-            throw new RuntimeException("Không có thí sinh để xuất file");
-        }
-
         try (Workbook workbook = new XSSFWorkbook()) {
 
             Sheet sheet = workbook.createSheet("Candidates");
@@ -435,10 +431,6 @@ public class CandidateServiceImpl implements CandidateService {
 
         List<Candidate> candidates =
                 candidateRepository.findAllByExam_IdOrderByExamRoomAscIdAsc(examId);
-
-        if (candidates.isEmpty()) {
-            throw new RuntimeException("Không có thí sinh để xuất file");
-        }
 
         Map<String, List<Candidate>> grouped =
                 candidates.stream()
