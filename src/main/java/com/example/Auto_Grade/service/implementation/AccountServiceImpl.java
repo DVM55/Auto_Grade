@@ -187,10 +187,12 @@ public class AccountServiceImpl implements AccountService {
                 .email((String) map.get("email"))
                 .avatarUrl(minioChannel.getPresignedUrlSafe(
                         (String) map.get("object_key"), 86400))
+                .role(String.valueOf(map.get("role")))
                 .phone((String) map.get("phone"))
                 .date_of_birth(dob) // ✅ đã convert đúng
                 .address((String) map.get("address"))
                 .gender((String) map.get("gender"))
+
                 .build();
     }
 

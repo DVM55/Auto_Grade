@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.Date;
 
 @RestController
@@ -145,7 +146,7 @@ public class GlobalExceptionHandler {
         ExceptionResponse response = ExceptionResponse.builder()
                 .timestamp(new Date())
                 .status(HttpStatus.BAD_REQUEST)
-                .message(ex.getMessage())
+                .message("Dữ liệu không hợp lệ: " + ex.getMessage())
                 .details(ex.toString())
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

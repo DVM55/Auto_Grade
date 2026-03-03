@@ -27,10 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -367,51 +364,22 @@ public class CandidateServiceImpl implements CandidateService {
     @Override
     public byte[] exportCandidatesToExcel(Long examId) {
 
-        // ===== 1. Tìm exam =====
-        Exam exam = examRepository.findById(examId)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(
-                                "Không tìm thấy kỳ thi với id: " + examId
-                        )
-                );
-
-        // ===== 2. Lấy user hiện tại =====
-        Account currentAccount = getCurrentAccount();
-
-        // ===== 3. Check quyền =====
-        if (!exam.getCreator().getId().equals(currentAccount.getId())) {
-            throw new AccessDeniedException(
-                    "Bạn không có quyền xuất danh sách thí sinh"
-            );
-        }
+        validateExamAndPermission(examId);
 
         List<Candidate> candidates =
                 candidateRepository.findAllByExam_IdOrderByIdAsc(examId);
+
+        if (candidates.isEmpty()) {
+            throw new RuntimeException("Không có thí sinh để xuất file");
+        }
 
         try (Workbook workbook = new XSSFWorkbook()) {
 
             Sheet sheet = workbook.createSheet("Candidates");
 
-            // ================= HEADER STYLE =================
-            CellStyle headerStyle = workbook.createCellStyle();
-            Font headerFont = workbook.createFont();
-            headerFont.setBold(true);
-            headerFont.setColor(IndexedColors.WHITE.getIndex());
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            CellStyle dateStyle = createDateStyle(workbook);
 
-            headerStyle.setFont(headerFont);
-            headerStyle.setFillForegroundColor(IndexedColors.BLUE.getIndex());
-            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            headerStyle.setAlignment(HorizontalAlignment.CENTER);
-            headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-
-            // ================= DATE STYLE =================
-            CellStyle dateStyle = workbook.createCellStyle();
-            CreationHelper createHelper = workbook.getCreationHelper();
-            dateStyle.setDataFormat(
-                    createHelper.createDataFormat().getFormat("dd/MM/yyyy")
-            );
-
-            // ================= HEADER =================
             String[] columns = {
                     "Họ và tên",
                     "Số báo danh",
@@ -422,15 +390,8 @@ public class CandidateServiceImpl implements CandidateService {
                     "Giới tính"
             };
 
-            Row headerRow = sheet.createRow(0);
+            createHeaderRow(sheet, columns, headerStyle);
 
-            for (int i = 0; i < columns.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(columns[i]);
-                cell.setCellStyle(headerStyle);
-            }
-
-            // ================= DATA =================
             int rowIdx = 1;
 
             for (Candidate c : candidates) {
@@ -445,7 +406,6 @@ public class CandidateServiceImpl implements CandidateService {
                 );
                 row.createCell(4).setCellValue(c.getClassName());
 
-                // ===== Ngày sinh đúng chuẩn Excel Date =====
                 if (c.getDateOfBirth() != null) {
                     Cell dateCell = row.createCell(5);
                     dateCell.setCellValue(
@@ -459,18 +419,89 @@ public class CandidateServiceImpl implements CandidateService {
                 );
             }
 
-            // Auto size columns
-            for (int i = 0; i < columns.length; i++) {
-                sheet.autoSizeColumn(i);
+            autoSize(sheet, columns.length);
+
+            return writeToByteArray(workbook);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Không thể xuất file Excel", e);
+        }
+    }
+
+    @Override
+    public byte[] exportCandidatesGroupByExamRoom(Long examId) {
+
+        validateExamAndPermission(examId);
+
+        List<Candidate> candidates =
+                candidateRepository.findAllByExam_IdOrderByExamRoomAscIdAsc(examId);
+
+        if (candidates.isEmpty()) {
+            throw new RuntimeException("Không có thí sinh để xuất file");
+        }
+
+        Map<String, List<Candidate>> grouped =
+                candidates.stream()
+                        .collect(Collectors.groupingBy(
+                                Candidate::getExamRoom,
+                                LinkedHashMap::new,
+                                Collectors.toList()
+                        ));
+
+        try (Workbook workbook = new XSSFWorkbook()) {
+
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            CellStyle dateStyle = createDateStyle(workbook);
+
+            String[] columns = {
+                    "STT",
+                    "Họ và tên",
+                    "Số báo danh",
+                    "Lớp",
+                    "Ngày sinh",
+                    "Giới tính",
+                    "Ghi chú"
+            };
+
+            for (Map.Entry<String, List<Candidate>> entry : grouped.entrySet()) {
+
+                Sheet sheet = workbook.createSheet(entry.getKey());
+
+                createHeaderRow(sheet, columns, headerStyle);
+
+                int rowIdx = 1;
+                int stt = 1;
+
+                for (Candidate c : entry.getValue()) {
+
+                    Row row = sheet.createRow(rowIdx++);
+
+                    row.createCell(0).setCellValue(stt++);
+                    row.createCell(1).setCellValue(c.getFullName());
+                    row.createCell(2).setCellValue(c.getCandidateNumber());
+                    row.createCell(3).setCellValue(c.getClassName());
+
+                    if (c.getDateOfBirth() != null) {
+                        Cell dateCell = row.createCell(4);
+                        dateCell.setCellValue(
+                                java.sql.Date.valueOf(c.getDateOfBirth())
+                        );
+                        dateCell.setCellStyle(dateStyle);
+                    }
+
+                    row.createCell(5).setCellValue(
+                            c.getGender() == null ? "" : c.getGender()
+                    );
+
+                    row.createCell(6).setCellValue(
+                            c.getNote() == null ? "" : c.getNote()
+                    );
+                }
+
+                autoSize(sheet, columns.length);
             }
 
-            // Freeze header
-            sheet.createFreezePane(0, 1);
-
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            workbook.write(bos);
-
-            return bos.toByteArray();
+            return writeToByteArray(workbook);
 
         } catch (IOException e) {
             throw new RuntimeException("Không thể xuất file Excel", e);
@@ -489,6 +520,80 @@ public class CandidateServiceImpl implements CandidateService {
                 .note(candidate.getNote())
                 .gender(candidate.getGender())
                 .build();
+    }
+
+    private void validateExamAndPermission(Long examId) {
+
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Không tìm thấy kỳ thi với id: " + examId
+                        )
+                );
+
+        Account currentAccount = getCurrentAccount();
+
+        if (!exam.getCreator().getId().equals(currentAccount.getId())) {
+            throw new AccessDeniedException(
+                    "Bạn không có quyền xuất danh sách thí sinh"
+            );
+        }
+    }
+
+    private CellStyle createHeaderStyle(Workbook workbook) {
+
+        CellStyle headerStyle = workbook.createCellStyle();
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+        headerStyle.setFont(headerFont);
+        headerStyle.setFillForegroundColor(IndexedColors.BLUE.getIndex());
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        headerStyle.setAlignment(HorizontalAlignment.CENTER);
+        headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        return headerStyle;
+    }
+
+    private CellStyle createDateStyle(Workbook workbook) {
+
+        CellStyle dateStyle = workbook.createCellStyle();
+        CreationHelper createHelper = workbook.getCreationHelper();
+
+        dateStyle.setDataFormat(
+                createHelper.createDataFormat().getFormat("dd/MM/yyyy")
+        );
+
+        return dateStyle;
+    }
+
+    private void createHeaderRow(
+            Sheet sheet,
+            String[] columns,
+            CellStyle headerStyle
+    ) {
+
+        Row headerRow = sheet.createRow(0);
+
+        for (int i = 0; i < columns.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(columns[i]);
+            cell.setCellStyle(headerStyle);
+        }
+    }
+
+    private void autoSize(Sheet sheet, int columnCount) {
+        for (int i = 0; i < columnCount; i++) {
+            sheet.autoSizeColumn(i);
+        }
+        sheet.createFreezePane(0, 1);
+    }
+
+    private byte[] writeToByteArray(Workbook workbook) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        workbook.write(bos);
+        return bos.toByteArray();
     }
 
     // ================= CURRENT USER =================

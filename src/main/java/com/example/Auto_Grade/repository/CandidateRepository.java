@@ -53,4 +53,6 @@ public interface CandidateRepository extends JpaRepository<Candidate, Long> {
             @Param("className") String className,
             Pageable pageable
     );
+
+    List<Candidate> findAllByExam_IdOrderByExamRoomAscIdAsc(Long examId);
 }

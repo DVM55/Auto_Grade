@@ -21,4 +21,6 @@ public interface CandidateService {
             int size
     );
     byte[] exportCandidatesToExcel(Long examId);
+
+    byte[] exportCandidatesGroupByExamRoom(Long examId);
 }

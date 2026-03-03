@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 
 @Entity
 @Table(name = "exams")
@@ -24,4 +26,8 @@ public class Exam extends BaseEntity{
     @JoinColumn(name = "creator_id", nullable = false)
     @JsonIgnore
     private Account creator;
+
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<ExamSession> examSessions;
 }

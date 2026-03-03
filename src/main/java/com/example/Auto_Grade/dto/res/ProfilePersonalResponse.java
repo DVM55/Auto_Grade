@@ -19,4 +19,5 @@ public class ProfilePersonalResponse {
     private LocalDate date_of_birth;
     private String address;
     private String gender;
+    private String role;
 }

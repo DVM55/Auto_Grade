@@ -23,3 +23,21 @@ databaseChangeLog:
       changes:
         - sqlFile:
             path: changelog/ddl/changelog-0004.sql
+  - changeSet:
+      id: create-tables-5
+      author: vanmanh
+      changes:
+        - sqlFile:
+            path: changelog/ddl/changelog-0005.sql
+  - changeSet:
+      id: create-tables-6
+      author: vanmanh
+      changes:
+        - sqlFile:
+            path: changelog/ddl/changelog-0006.sql
+  - changeSet:
+      id: create-tables-7
+      author: vanmanh
+      changes:
+        - sqlFile:
+            path: changelog/ddl/changelog-0007.sql

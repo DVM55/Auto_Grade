@@ -140,4 +140,22 @@ public class CandidateController {
                 )
                 .body(excelData);
     }
+
+    @GetMapping("/exams/{examId}/export-by-exam-room")
+    public ResponseEntity<byte[]> exportCandidatesGroupByExamRoom(
+            @PathVariable Long examId
+    ) {
+
+        byte[] excelData = candidateService.exportCandidatesGroupByExamRoom(examId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=candidates.xlsx")
+                .contentType(
+                        MediaType.parseMediaType(
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                )
+                .body(excelData);
+    }
 }
