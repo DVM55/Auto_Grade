@@ -5,9 +5,7 @@ import lombok.Data;
 
 @Data
 public class DocumentRequest {
-
-    @NotBlank(message = "Tiêu đề không được để trống")
-    private String title;
-
-    private String description;
+    private String objectKey;
+    private String fileName;
+    private String contentType;
 }

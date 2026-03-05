@@ -1,9 +1,11 @@
 package com.example.Auto_Grade.controller;
 
+
 import com.example.Auto_Grade.dto.req.DocumentRequest;
+import com.example.Auto_Grade.dto.req.UpdateDocumentRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
 import com.example.Auto_Grade.dto.res.DocumentResponse;
-import com.example.Auto_Grade.entity.Document;
+
 import com.example.Auto_Grade.service.DocumentService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -11,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/document")
@@ -21,34 +25,34 @@ public class DocumentController {
 
     // ================= CREATE =================
     @PostMapping("/class/{classId}")
-    public ResponseEntity<ApiResponse<DocumentResponse>> createDocument(
+    public ResponseEntity<ApiResponse<Void>> createDocument(
             @PathVariable Long classId,
-            @Valid @RequestBody DocumentRequest request) {
+            @Valid @RequestBody List<DocumentRequest> requests) {
 
-        DocumentResponse response = documentService.createDocument(request, classId);
+        documentService.createDocument(requests, classId);
 
         return ResponseEntity.ok(
-                ApiResponse.<DocumentResponse>builder()
+                ApiResponse.<Void>builder()
                         .code(HttpServletResponse.SC_OK)
-                        .message("Tạo thư mục thành công")
-                        .data(response)
+                        .message("Tạo tài liệu thành công")
+                        .data(null)
                         .build()
         );
     }
 
     // ================= UPDATE =================
     @PutMapping("/{documentId}")
-    public ResponseEntity<ApiResponse<DocumentResponse>> updateDocument(
+    public ResponseEntity<ApiResponse<Void>> updateDocument(
             @PathVariable Long documentId,
-            @Valid @RequestBody DocumentRequest request) {
+            @Valid @RequestBody UpdateDocumentRequest request) {
 
-        DocumentResponse response = documentService.updateDocument(request, documentId);
+         documentService.updateDocument(request, documentId);
 
         return ResponseEntity.ok(
-                ApiResponse.<DocumentResponse>builder()
+                ApiResponse.<Void>builder()
                         .code(HttpServletResponse.SC_OK)
-                        .message("Cập nhật thư mục thành công")
-                        .data(response)
+                        .message("Cập nhật tài liệu thành công")
+                        .data(null)
                         .build()
         );
     }
@@ -63,7 +67,7 @@ public class DocumentController {
         return ResponseEntity.ok(
                 ApiResponse.<Void>builder()
                         .code(HttpServletResponse.SC_OK)
-                        .message("Xóa thư mục thành công")
+                        .message("Xóa tài liệu thành công")
                         .data(null)
                         .build()
         );
@@ -83,22 +87,6 @@ public class DocumentController {
                         .code(HttpServletResponse.SC_OK)
                         .message("Lấy danh sách tài liệu thành công")
                         .data(response)
-                        .build()
-        );
-    }
-
-    // ================= GET DETAIL =================
-    @GetMapping("/{documentId}")
-    public ResponseEntity<ApiResponse<Document>> getDocumentById(
-            @PathVariable Long documentId) {
-
-        Document document = documentService.getDocumentById(documentId);
-
-        return ResponseEntity.ok(
-                ApiResponse.<Document>builder()
-                        .code(HttpServletResponse.SC_OK)
-                        .message("Lấy chi tiết tài liệu thành công")
-                        .data(document)
                         .build()
         );
     }

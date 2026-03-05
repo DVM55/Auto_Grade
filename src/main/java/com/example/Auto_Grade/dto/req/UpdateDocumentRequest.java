@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class UpdateDocumentDetailRequest {
+public class UpdateDocumentRequest {
     @NotBlank(message = "Tên không được để trống")
     private String fileName;
 }

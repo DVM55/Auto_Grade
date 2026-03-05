@@ -4,9 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
 @Table(name = "documents")
 @Getter
@@ -24,17 +21,12 @@ public class Document extends BaseEntity{
     @JsonIgnore
     private Class classEntity;
 
-    @Column(nullable = false, length = 255)
-    private String title;
+    @Column(name = "file_name", nullable = false, length = 255)
+    private String fileName;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
+    @Column(name = "object_key", nullable = false, length = 500)
+    private String objectKey;
 
-    @OneToMany(
-            mappedBy = "document",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true,
-            fetch = FetchType.LAZY
-    )
-    private List<DocumentDetail> details = new ArrayList<>();
+    @Column(name = "content_type", nullable = false, length = 150)
+    private String contentType;
 }
