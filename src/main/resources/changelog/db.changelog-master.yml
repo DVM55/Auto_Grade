@@ -52,4 +52,10 @@ databaseChangeLog:
       author: vanmanh
       changes:
         - sqlFile:
-            path: changelog/ddl/changelog-0009a.sql
+            path: changelog/ddl/changelog-0009.sql
+  - changeSet:
+      id: create-tables-10
+      author: vanmanh
+      changes:
+        - sqlFile:
+            path: changelog/ddl/changelog-0010.sql
