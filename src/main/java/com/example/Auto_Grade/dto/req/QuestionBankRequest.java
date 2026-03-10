@@ -4,11 +4,13 @@ import com.example.Auto_Grade.enums.QuestionType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
+@Builder
 public class QuestionBankRequest {
 
     @NotBlank(message = "Nội dung câu hỏi không được để trống")

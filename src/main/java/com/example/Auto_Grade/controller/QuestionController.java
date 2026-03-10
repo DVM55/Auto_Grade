@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -101,6 +102,42 @@ public class QuestionController {
                 .message("Lấy chi tiết câu hỏi thành công")
                 .data(result)
                 .build());
+    }
+
+    @PostMapping(
+            value = "/import-word",
+            consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ApiResponse<List<QuestionBankRequest>>> importWord(
+            @RequestParam("file") MultipartFile file) {
+
+        List<QuestionBankRequest> questions = questionService.importWord(file);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<QuestionBankRequest>>builder()
+                        .code(HttpServletResponse.SC_OK)
+                        .message("Import câu hỏi thành công")
+                        .data(questions)
+                        .build()
+        );
+    }
+
+    @PostMapping(
+            value = "/import-excel",
+            consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ApiResponse<List<QuestionBankRequest>>> importExcel(
+            @RequestParam("file") MultipartFile file) {
+
+        List<QuestionBankRequest> questions = questionService.importExcel(file);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<QuestionBankRequest>>builder()
+                        .code(HttpServletResponse.SC_OK)
+                        .message("Import câu hỏi thành công")
+                        .data(questions)
+                        .build()
+        );
     }
 }
 
