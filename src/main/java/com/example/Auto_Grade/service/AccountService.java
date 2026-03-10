@@ -3,10 +3,7 @@ package com.example.Auto_Grade.service;
 import com.example.Auto_Grade.dto.req.ChangePasswordRequest;
 import com.example.Auto_Grade.dto.req.UpdateAccountRequest;
 import com.example.Auto_Grade.dto.req.UpdateAvatarRequest;
-import com.example.Auto_Grade.dto.res.AccountResponse;
-import com.example.Auto_Grade.dto.res.AvatarUrlResponse;
-import com.example.Auto_Grade.dto.res.ProfilePersonalResponse;
-import com.example.Auto_Grade.dto.res.UpdateAccountResponse;
+import com.example.Auto_Grade.dto.res.*;
 import com.example.Auto_Grade.enums.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,8 +19,7 @@ public interface AccountService {
 
     UpdateAccountResponse updateAccount(UpdateAccountRequest updateAccountRequest);
 
-    Page<AccountResponse> getAccountsByRole(Role role, int page, int size, String username,
-                                            String email);
+    PagingResponse<AccountResponse> getAccounts(Role role, int page, int size, String username, String email);
 
     ProfilePersonalResponse getProfilePersonal();
 }

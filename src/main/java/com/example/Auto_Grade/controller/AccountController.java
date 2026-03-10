@@ -3,10 +3,7 @@ package com.example.Auto_Grade.controller;
 import com.example.Auto_Grade.dto.req.ChangePasswordRequest;
 import com.example.Auto_Grade.dto.req.UpdateAccountRequest;
 import com.example.Auto_Grade.dto.req.UpdateAvatarRequest;
-import com.example.Auto_Grade.dto.res.ApiResponse;
-import com.example.Auto_Grade.dto.res.AvatarUrlResponse;
-import com.example.Auto_Grade.dto.res.ProfilePersonalResponse;
-import com.example.Auto_Grade.dto.res.UpdateAccountResponse;
+import com.example.Auto_Grade.dto.res.*;
 import com.example.Auto_Grade.enums.Role;
 import com.example.Auto_Grade.service.AccountService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -111,35 +108,27 @@ public class AccountController {
 
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<?>> getUsers(
+    public ResponseEntity<PagingResponse<AccountResponse>> getUsers(
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String email,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(
-                ApiResponse.builder()
-                        .code(HttpServletResponse.SC_OK)
-                        .message("Lấy danh sách USER thành công")
-                        .data(accountService.getAccountsByRole(Role.USER, page, size, username, email))
-                        .build()
+                accountService.getAccounts(Role.USER, page, size, username, email)
         );
     }
 
     @GetMapping("/teachers")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<?>> getTeachers(
+    public ResponseEntity<PagingResponse<AccountResponse>> getTeachers(
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String email,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(
-                ApiResponse.builder()
-                        .code(HttpServletResponse.SC_OK)
-                        .message("Lấy danh sách TEACHER thành công")
-                        .data(accountService.getAccountsByRole(Role.TEACHER, page, size, username, email))
-                        .build()
+                accountService.getAccounts(Role.USER, page, size, username, email)
         );
     }
 }

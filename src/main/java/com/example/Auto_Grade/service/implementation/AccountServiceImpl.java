@@ -3,20 +3,17 @@ package com.example.Auto_Grade.service.implementation;
 import com.example.Auto_Grade.dto.req.ChangePasswordRequest;
 import com.example.Auto_Grade.dto.req.UpdateAccountRequest;
 import com.example.Auto_Grade.dto.req.UpdateAvatarRequest;
-import com.example.Auto_Grade.dto.res.AccountResponse;
-import com.example.Auto_Grade.dto.res.AvatarUrlResponse;
-import com.example.Auto_Grade.dto.res.ProfilePersonalResponse;
-import com.example.Auto_Grade.dto.res.UpdateAccountResponse;
+import com.example.Auto_Grade.dto.res.*;
 import com.example.Auto_Grade.entity.Account;
 import com.example.Auto_Grade.entity.UserDetail;
 import com.example.Auto_Grade.enums.Gender;
 import com.example.Auto_Grade.enums.Role;
 import com.example.Auto_Grade.integration.minio.MinioChannel;
-import com.example.Auto_Grade.mapper.AccountMapper;
 import com.example.Auto_Grade.repository.AccountRepository;
 import com.example.Auto_Grade.repository.UserDetailRepository;
 import com.example.Auto_Grade.service.AccountService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -40,7 +37,6 @@ public class AccountServiceImpl implements AccountService {
     private final PasswordEncoder passwordEncoder;
     private final MinioChannel minioChannel;
     private final UserDetailRepository userDetailRepository;
-    private final AccountMapper accountMapper;
 
     @Override
     public void deleteAccountById(Long id) {
@@ -163,12 +159,12 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Page<AccountResponse> getAccountsByRole(Role role, int page, int size, String username, String email) {
+    public PagingResponse<AccountResponse> getAccounts(Role role, int page, int size, String username, String email) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
 
         Page<Account> accountPage = accountRepository.findByRoleAndFilters(role, username, email, pageable);
 
-        return accountPage.map(account -> AccountResponse.builder()
+        Page<AccountResponse> responsePage = accountPage.map(account -> AccountResponse.builder()
                 .id(account.getId())
                 .email(account.getEmail())
                 .username(account.getUsername())
@@ -176,6 +172,21 @@ public class AccountServiceImpl implements AccountService {
                 .role(account.getRole())
                 .locked(account.isLocked())
                 .build());
+
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(responsePage.getTotalElements())
+                .itemCount(responsePage.getNumberOfElements())
+                .itemsPerPage(responsePage.getSize())
+                .totalPages(responsePage.getTotalPages())
+                .currentPage(responsePage.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<AccountResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách tài khoản thành công")
+                .data(responsePage.getContent())
+                .meta(meta)
+                .build();
     }
 
     @Override
