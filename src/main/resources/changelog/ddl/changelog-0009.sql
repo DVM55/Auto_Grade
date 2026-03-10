@@ -25,4 +25,4 @@ ALTER TABLE public.medias
     ADD CONSTRAINT fk_medias_created_by
         FOREIGN KEY (created_by)
             REFERENCES public.accounts(id)
-            ON DELETE RESTRICT;
+            ON DELETE CASCADE;

@@ -1,0 +1,32 @@
+package com.example.Auto_Grade.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "question_options")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class QuestionOption extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // Nội dung đáp án
+    @Column(name = "option_text", nullable = false, columnDefinition = "TEXT")
+    private String optionText;
+
+    @Column(name = "is_correct", nullable = false)
+    @Builder.Default
+    private Boolean isCorrect = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_id", nullable = false)
+    @JsonIgnore
+    private Question question;
+}

@@ -23,7 +23,7 @@ ALTER TABLE public.category_questions
     ADD CONSTRAINT fk_category_questions_creator
         FOREIGN KEY (creator_id)
             REFERENCES public.accounts(id)
-            ON DELETE RESTRICT;
+            ON DELETE CASCADE;
 
 -- ============================================================
 -- Bảng group_questions: nhóm câu hỏi (độc lập, không thuộc danh mục)
@@ -50,4 +50,4 @@ ALTER TABLE public.group_questions
     ADD CONSTRAINT fk_group_questions_creator
         FOREIGN KEY (creator_id)
             REFERENCES public.accounts(id)
-            ON DELETE RESTRICT;
+            ON DELETE CASCADE;

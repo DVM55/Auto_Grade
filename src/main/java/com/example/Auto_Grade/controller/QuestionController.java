@@ -1,0 +1,106 @@
+package com.example.Auto_Grade.controller;
+
+import com.example.Auto_Grade.dto.req.QuestionBankRequest;
+import com.example.Auto_Grade.dto.res.ApiResponse;
+import com.example.Auto_Grade.dto.res.QuestionBankResponse;
+import com.example.Auto_Grade.service.QuestionService;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+
+@RestController
+@RequestMapping("/api/v1/questions")
+@RequiredArgsConstructor
+public class QuestionController {
+
+    private final QuestionService questionService;
+
+    // ───────────── CREATE ────────────
+    @PostMapping
+    public ResponseEntity<ApiResponse<Void>> createQuestionBank(
+            @Valid @RequestBody List<QuestionBankRequest> requests) {
+
+        questionService.createQuestionBank(requests);
+
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Tạo câu hỏi thành công")
+                .data(null)
+                .build());
+    }
+
+    // ───────────── UPDATE ─────────────
+    @PutMapping("/{questionId}")
+    public ResponseEntity<ApiResponse<Void>> update(
+            @PathVariable Long questionId,
+            @Valid @RequestBody QuestionBankRequest request) {
+        questionService.updateQuestion(questionId, request);
+
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Cập nhật câu hỏi thành công")
+                .data(null)
+                .build());
+    }
+
+    // ───────────── DELETE ─────────────
+    @DeleteMapping("/{questionId}")
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @PathVariable Long questionId) {
+        questionService.deleteQuestion(questionId);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Xoá câu hỏi thành công")
+                .data(null)
+                .build());
+    }
+
+    @DeleteMapping("")
+    public ResponseEntity<ApiResponse<Void>> deleteAllQuestionByCreatorId() {
+        questionService.deleteAllQuestionByCreatorId();
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Xoá thành công")
+                .data(null)
+                .build());
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<QuestionBankResponse>>> getQuestionBank(
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long groupId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+
+        Page<QuestionBankResponse> result =
+                questionService.getQuestionBank(categoryId, groupId, page, size);
+
+        return ResponseEntity.ok(ApiResponse.<Page<QuestionBankResponse>>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách câu hỏi thành công")
+                .data(result)
+                .build());
+    }
+
+    @GetMapping("/{questionId}")
+    public ResponseEntity<ApiResponse<QuestionBankResponse>> getQuestionById(
+            @PathVariable Long questionId) {
+
+        QuestionBankResponse result =
+                questionService.getQuestionBankById(questionId);
+
+        return ResponseEntity.ok(ApiResponse.<QuestionBankResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy chi tiết câu hỏi thành công")
+                .data(result)
+                .build());
+    }
+}
+

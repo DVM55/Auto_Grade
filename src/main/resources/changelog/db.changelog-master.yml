@@ -59,3 +59,10 @@ databaseChangeLog:
       changes:
         - sqlFile:
             path: changelog/ddl/changelog-0010.sql
+  - changeSet:
+      id: create-tables-11
+      author: vanmanh
+      changes:
+        - sqlFile:
+            path: changelog/ddl/changelog-0011.sql
+
