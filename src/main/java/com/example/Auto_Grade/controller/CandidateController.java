@@ -3,11 +3,11 @@ package com.example.Auto_Grade.controller;
 import com.example.Auto_Grade.dto.req.CandidateRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
 import com.example.Auto_Grade.dto.res.CandidateResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.service.CandidateService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -40,18 +40,17 @@ public class CandidateController {
 
     // ================= UPDATE =================
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<CandidateResponse>> updateCandidate(
+    public ResponseEntity<ApiResponse<Void>> updateCandidate(
             @PathVariable Long id,
             @Valid @RequestBody CandidateRequest request) {
 
-        CandidateResponse response =
-                candidateService.updateCandidate(id, request);
+        candidateService.updateCandidate(id, request);
 
         return ResponseEntity.ok(
-                ApiResponse.<CandidateResponse>builder()
+                ApiResponse.<Void>builder()
                         .code(HttpServletResponse.SC_OK)
                         .message("Cập nhật thí sinh thành công")
-                        .data(response)
+                        .data(null)
                         .build()
         );
     }
@@ -88,7 +87,7 @@ public class CandidateController {
 
     // ================= GET CANDIDATES BY EXAM ID WITH PAGINATION AND FILTERING =================
     @GetMapping("/exams/{examId}/candidates")
-    public ResponseEntity<ApiResponse<Page<CandidateResponse>>> getCandidatesByExamId(
+    public ResponseEntity<PagingResponse<CandidateResponse>> getCandidatesByExamId(
 
             @PathVariable Long examId,
 
@@ -102,24 +101,8 @@ public class CandidateController {
             @RequestParam(defaultValue = "10") int size
     ) {
 
-        Page<CandidateResponse> result =
-                candidateService.getCandidatesByExamId(
-                        examId,
-                        fullName,
-                        candidateNumber,
-                        examRoom,
-                        note,
-                        className,
-                        page,
-                        size
-                );
-
         return ResponseEntity.ok(
-                ApiResponse.<Page<CandidateResponse>>builder()
-                        .code(HttpServletResponse.SC_OK)
-                        .message("Lấy danh sách thí sinh thành công")
-                        .data(result)
-                        .build()
+                candidateService.getCandidatesByExamId(examId, fullName, candidateNumber, examRoom, note, className, page, size)
         );
     }
 

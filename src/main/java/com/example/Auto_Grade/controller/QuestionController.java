@@ -2,12 +2,12 @@ package com.example.Auto_Grade.controller;
 
 import com.example.Auto_Grade.dto.req.QuestionBankRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.dto.res.QuestionBankResponse;
 import com.example.Auto_Grade.service.QuestionService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -73,21 +73,14 @@ public class QuestionController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<QuestionBankResponse>>> getQuestionBank(
+    public ResponseEntity<PagingResponse<QuestionBankResponse>> getQuestionBank(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long groupId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
 
-        Page<QuestionBankResponse> result =
-                questionService.getQuestionBank(categoryId, groupId, page, size);
-
-        return ResponseEntity.ok(ApiResponse.<Page<QuestionBankResponse>>builder()
-                .code(HttpServletResponse.SC_OK)
-                .message("Lấy danh sách câu hỏi thành công")
-                .data(result)
-                .build());
+        return ResponseEntity.ok(questionService.getQuestionBank(categoryId, groupId, page, size));
     }
 
     @GetMapping("/{questionId}")

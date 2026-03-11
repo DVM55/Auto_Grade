@@ -2,6 +2,8 @@ package com.example.Auto_Grade.service.implementation;
 
 import com.example.Auto_Grade.dto.req.ClassCodeRequest;
 import com.example.Auto_Grade.dto.res.ClassMemberResponse;
+import com.example.Auto_Grade.dto.res.MetaResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.entity.Account;
 import com.example.Auto_Grade.entity.Class;
 import com.example.Auto_Grade.entity.ClassMember;
@@ -12,9 +14,12 @@ import com.example.Auto_Grade.repository.ClassMemberRepository;
 import com.example.Auto_Grade.repository.ClassRepository;
 import com.example.Auto_Grade.service.ClassMemberService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -100,11 +105,12 @@ public class ClassMemberServiceImpl implements ClassMemberService {
     }
 
     @Override
-    public Page<ClassMemberResponse> getPendingMembers(
+    public PagingResponse<ClassMemberResponse> getPendingMembers(
             Long classId,
             String username,
             String email,
-            Pageable pageable
+            int page,
+            int size
     ) {
 
         // 1️⃣ Lấy class
@@ -121,7 +127,10 @@ public class ClassMemberServiceImpl implements ClassMemberService {
             throw new AccessDeniedException("Bạn không có quyền xem danh sách này");
         }
 
-        Page<ClassMember> page = classMemberRepository
+        Pageable pageable =
+                PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<ClassMember> pageResponse = classMemberRepository
                 .findMembersByStatusAndFilters(
                         classId,
                         MemberStatus.PENDING,
@@ -130,15 +139,29 @@ public class ClassMemberServiceImpl implements ClassMemberService {
                         pageable
                 );
 
-        return page.map(this::mapToResponse);
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(pageResponse.getTotalElements())
+                .itemCount(pageResponse.getNumberOfElements())
+                .itemsPerPage(pageResponse.getSize())
+                .totalPages(pageResponse.getTotalPages())
+                .currentPage(pageResponse.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<ClassMemberResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách thành viên đợi phê duyệt thành công")
+                .data(pageResponse.map(this::mapToResponse).getContent())
+                .meta(meta)
+                .build();
     }
 
     @Override
-    public Page<ClassMemberResponse> getApprovedMembers(
+    public PagingResponse<ClassMemberResponse> getApprovedMembers(
             Long classId,
             String username,
             String email,
-            Pageable pageable
+            int page,
+            int size
     ) {
 
         // 1️⃣ Lấy class
@@ -156,7 +179,10 @@ public class ClassMemberServiceImpl implements ClassMemberService {
             throw new AccessDeniedException("Bạn không có quyền xem danh sách này");
         }
 
-        Page<ClassMember> page = classMemberRepository
+        Pageable pageable =
+                PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<ClassMember> pageResponse = classMemberRepository
                 .findMembersByStatusAndFilters(
                         classId,
                         MemberStatus.APPROVED,
@@ -165,7 +191,20 @@ public class ClassMemberServiceImpl implements ClassMemberService {
                         pageable
                 );
 
-        return page.map(this::mapToResponse);
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(pageResponse.getTotalElements())
+                .itemCount(pageResponse.getNumberOfElements())
+                .itemsPerPage(pageResponse.getSize())
+                .totalPages(pageResponse.getTotalPages())
+                .currentPage(pageResponse.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<ClassMemberResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách thành viên thành công")
+                .data(pageResponse.map(this::mapToResponse).getContent())
+                .meta(meta)
+                .build();
     }
 
     private ClassMemberResponse mapToResponse(ClassMember member) {

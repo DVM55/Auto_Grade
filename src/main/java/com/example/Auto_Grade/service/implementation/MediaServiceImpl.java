@@ -2,15 +2,20 @@ package com.example.Auto_Grade.service.implementation;
 
 import com.example.Auto_Grade.dto.req.MediaRequest;
 import com.example.Auto_Grade.dto.req.UpdateMediaRequest;
+
 import com.example.Auto_Grade.dto.res.MediaResponse;
+import com.example.Auto_Grade.dto.res.MetaResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.entity.Account;
 import com.example.Auto_Grade.entity.Media;
+import com.example.Auto_Grade.enums.MediaType;
 import com.example.Auto_Grade.enums.Role;
 import com.example.Auto_Grade.integration.minio.MinioChannel;
 import com.example.Auto_Grade.repository.AccountRepository;
 import com.example.Auto_Grade.repository.MediaRepository;
 import com.example.Auto_Grade.service.MediaService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,6 +24,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -98,12 +104,38 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public Page<MediaResponse> getMedias(Long accountId, String fileName, int page, int size) {
+    public PagingResponse<MediaResponse> getMediasByCreator( String fileName, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Long accountId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         Page<Media> mediaPage = mediaRepository.getMedias(accountId, fileName, pageable);
 
-        return mediaPage.map(this::toResponse);
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(mediaPage.getTotalElements())
+                .itemCount(mediaPage.getNumberOfElements())
+                .itemsPerPage(mediaPage.getSize())
+                .totalPages(mediaPage.getTotalPages())
+                .currentPage(mediaPage.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<MediaResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách media thành công")
+                .data(mediaPage.map(this::toResponse).getContent())
+                .meta(meta)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllMediaByCreator() {
+
+        Account currentUser = getCurrentUser();
+
+        List<Media> medias = mediaRepository.findAllByCreatedById(currentUser.getId());
+
+        mediaRepository.deleteAll(medias);
     }
 
     public MediaResponse toResponse(Media media) {
@@ -112,8 +144,30 @@ public class MediaServiceImpl implements MediaService {
                 .fileUrl(minioChannel.getPresignedUrlSafe(media.getObjectKey(), 3600))
                 .fileName(media.getFileName())
                 .contentType(media.getContentType())
+                .objectKey(media.getObjectKey())
+                .mediaType(parseMediaType(media.getContentType()))
                 .updatedAt(media.getUpdatedAt())
                 .build();
+    }
+
+    private MediaType parseMediaType(String contentType) {
+        if (contentType == null || contentType.isBlank()) {
+            return null;
+        }
+
+        if (contentType.startsWith("image/")) {
+            return MediaType.IMAGE;
+        }
+
+        if (contentType.startsWith("video/")) {
+            return MediaType.VIDEO;
+        }
+
+        if (contentType.startsWith("audio/")) {
+            return MediaType.AUDIO;
+        }
+
+        return null;
     }
 
     private boolean isPreviewable(String contentType) {

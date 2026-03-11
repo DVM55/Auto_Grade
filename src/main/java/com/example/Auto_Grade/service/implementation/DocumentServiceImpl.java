@@ -3,6 +3,8 @@ package com.example.Auto_Grade.service.implementation;
 import com.example.Auto_Grade.dto.req.DocumentRequest;
 import com.example.Auto_Grade.dto.req.UpdateDocumentRequest;
 import com.example.Auto_Grade.dto.res.DocumentResponse;
+import com.example.Auto_Grade.dto.res.MetaResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.entity.Account;
 import com.example.Auto_Grade.entity.Class;
 import com.example.Auto_Grade.entity.Document;
@@ -13,6 +15,7 @@ import com.example.Auto_Grade.repository.ClassRepository;
 import com.example.Auto_Grade.repository.DocumentRepository;
 import com.example.Auto_Grade.service.DocumentService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -68,7 +71,7 @@ public class DocumentServiceImpl implements DocumentService {
                 )
                 .toList();
 
-        List<Document> saved = documentRepository.saveAll(details);
+        documentRepository.saveAll(details);
     }
 
     @Override
@@ -88,8 +91,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
-    public Page<DocumentResponse> getDocuments(Long classId, int page, int size) {
-
+    public PagingResponse<DocumentResponse> getDocumentsByClassId(Long classId, int page, int size) {
         Long userId = (Long) SecurityContextHolder
                 .getContext()
                 .getAuthentication()
@@ -103,8 +105,23 @@ public class DocumentServiceImpl implements DocumentService {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        return documentRepository.findByClassId(classId, pageable)
-                .map(this::toResponse);
+        Page<Document> documentPage = documentRepository.findByClassId(classId, pageable);
+
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(documentPage.getTotalElements())
+                .itemCount(documentPage.getNumberOfElements())
+                .itemsPerPage(documentPage.getSize())
+                .totalPages(documentPage.getTotalPages())
+                .currentPage(documentPage.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<DocumentResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách tài liệu thành công")
+                .data(documentPage.map(this::toResponse).getContent())
+                .meta(meta)
+                .build();
+
     }
 
     public DocumentResponse toResponse(Document document) {

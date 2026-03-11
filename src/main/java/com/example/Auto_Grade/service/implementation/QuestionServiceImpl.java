@@ -4,9 +4,7 @@ import com.example.Auto_Grade.dto.req.QuestionOptionRequest;
 import com.example.Auto_Grade.dto.req.QuestionBankRequest;
 import com.example.Auto_Grade.dto.req.ShortAnswerOptionRequest;
 
-import com.example.Auto_Grade.dto.res.QuestionBankResponse;
-import com.example.Auto_Grade.dto.res.QuestionOptionResponse;
-import com.example.Auto_Grade.dto.res.ShortAnswerOptionResponse;
+import com.example.Auto_Grade.dto.res.*;
 import com.example.Auto_Grade.entity.*;
 import com.example.Auto_Grade.enums.MediaType;
 import com.example.Auto_Grade.enums.QuestionType;
@@ -14,6 +12,7 @@ import com.example.Auto_Grade.integration.minio.MinioChannel;
 import com.example.Auto_Grade.repository.*;
 import com.example.Auto_Grade.service.QuestionService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -140,6 +139,7 @@ public class QuestionServiceImpl implements QuestionService {
         }
 
         applyQuestionsDetails(question, request);
+        questionRepository.save(question);
     }
 
     @Override
@@ -157,6 +157,8 @@ public class QuestionServiceImpl implements QuestionService {
     public void createQuestionBank(List<QuestionBankRequest> requests) {
 
         Account creator = getCurrentAccount();
+
+        List<Question> questions = new ArrayList<>();
 
         for (QuestionBankRequest request : requests) {
 
@@ -181,7 +183,11 @@ public class QuestionServiceImpl implements QuestionService {
                     .build();
 
             applyQuestionsDetails(question, request);
+
+            questions.add(question);
         }
+
+        questionRepository.saveAll(questions);
     }
 
     @Override
@@ -193,7 +199,7 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public Page<QuestionBankResponse> getQuestionBank(
+    public PagingResponse<QuestionBankResponse> getQuestionBank(
             Long categoryId,
             Long groupId,
             int page,
@@ -209,7 +215,20 @@ public class QuestionServiceImpl implements QuestionService {
         Page<Question> questionPage =
                 questionRepository.searchQuestionBank(creatorId, categoryId, groupId, pageable);
 
-        return questionPage.map(this::mapToResponse);
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(questionPage.getTotalElements())
+                .itemCount(questionPage.getNumberOfElements())
+                .itemsPerPage(questionPage.getSize())
+                .totalPages(questionPage.getTotalPages())
+                .currentPage(questionPage.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<QuestionBankResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách câu hỏi thành công")
+                .data(questionPage.map(this::mapToResponse).getContent())
+                .meta(meta)
+                .build();
     }
 
     @Override

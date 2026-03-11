@@ -3,11 +3,11 @@ package com.example.Auto_Grade.controller;
 import com.example.Auto_Grade.dto.req.ExamRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
 import com.example.Auto_Grade.dto.res.ExamResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.service.ExamService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -39,17 +39,17 @@ public class ExamController {
     // ================= UPDATE =================
     @PreAuthorize("hasRole('TEACHER')")
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<ExamResponse>> updateExam(
+    public ResponseEntity<ApiResponse<Void>> updateExam(
             @PathVariable Long id,
             @Valid @RequestBody ExamRequest request) {
 
-        ExamResponse response = examService.updateExam(id, request);
+        examService.updateExam(id, request);
 
         return ResponseEntity.ok(
-                ApiResponse.<ExamResponse>builder()
+                ApiResponse.<Void>builder()
                         .code(HttpServletResponse.SC_OK)
                         .message("Cập nhật kỳ thi thành công")
-                        .data(response)
+                        .data(null)
                         .build()
         );
     }
@@ -74,20 +74,13 @@ public class ExamController {
     // ================= GET + SEARCH + PAGINATION =================
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<ExamResponse>>> getExams(
+    public ResponseEntity<PagingResponse<ExamResponse>> getExams(
             @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<ExamResponse> response =
-                examService.getExams(name, page, size);
-
         return ResponseEntity.ok(
-                ApiResponse.<Page<ExamResponse>>builder()
-                        .code(HttpServletResponse.SC_OK)
-                        .message("Lấy danh sách kỳ thi thành công")
-                        .data(response)
-                        .build()
+                examService.getExamsByCreator(name, page, size)
         );
     }
 }

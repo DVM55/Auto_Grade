@@ -4,6 +4,7 @@ import com.example.Auto_Grade.dto.req.ClassRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
 import com.example.Auto_Grade.dto.res.ClassDetailResponse;
 import com.example.Auto_Grade.dto.res.ClassResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.service.ClassService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -22,16 +23,16 @@ public class ClassController {
     // ================= CREATE =================
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping
-    public ResponseEntity<ApiResponse<ClassResponse>> createClass(
+    public ResponseEntity<ApiResponse<Void>> createClass(
             @Valid @RequestBody ClassRequest request) {
 
-        ClassResponse response = classService.createClass(request);
+       classService.createClass(request);
 
         return ResponseEntity.ok(
-                ApiResponse.<ClassResponse>builder()
+                ApiResponse.<Void>builder()
                         .code(HttpServletResponse.SC_OK)
                         .message("Tạo lớp thành công")
-                        .data(response)
+                        .data(null)
                         .build()
         );
     }
@@ -39,17 +40,17 @@ public class ClassController {
     // ================= UPDATE =================
     @PreAuthorize("hasRole('TEACHER')")
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<ClassResponse>> updateClass(
+    public ResponseEntity<ApiResponse<Void>> updateClass(
             @PathVariable Long id,
             @Valid @RequestBody ClassRequest request) {
 
-        ClassResponse response = classService.updateClass(request, id);
+       classService.updateClass(request, id);
 
         return ResponseEntity.ok(
-                ApiResponse.<ClassResponse>builder()
+                ApiResponse.<Void>builder()
                         .code(HttpServletResponse.SC_OK)
                         .message("Cập nhật lớp thành công")
-                        .data(response)
+                        .data(null)
                         .build()
         );
     }
@@ -73,18 +74,14 @@ public class ClassController {
 
     // ================= GET + SEARCH + PAGINATION =================
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getClasses(
+    public ResponseEntity<PagingResponse<ClassResponse>> getClasses(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String classCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(
-                ApiResponse.builder()
-                        .code(HttpServletResponse.SC_OK)
-                        .message("Lấy danh sách lớp thành công")
-                        .data(classService.getClasses(title, classCode, page, size))
-                        .build()
+                classService.getClassesByCreator(title, classCode, page, size)
         );
     }
 

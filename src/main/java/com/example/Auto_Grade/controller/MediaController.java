@@ -4,11 +4,11 @@ import com.example.Auto_Grade.dto.req.MediaRequest;
 import com.example.Auto_Grade.dto.req.UpdateMediaRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
 import com.example.Auto_Grade.dto.res.MediaResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.service.MediaService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,22 +67,26 @@ public class MediaController {
         );
     }
 
+    @DeleteMapping("")
+    public ResponseEntity<ApiResponse<Void>> deleteAllMediaByCreator() {
+        mediaService.deleteAllMediaByCreator();
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .code(HttpServletResponse.SC_OK)
+                        .message("Xóa media thành công")
+                        .build()
+        );
+    }
+
     // GET LIST
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<MediaResponse>>> getMedias(
-            @RequestParam Long accountId,
+    public ResponseEntity<PagingResponse<MediaResponse>> getMedias(
             @RequestParam(required = false) String fileName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<MediaResponse> response = mediaService.getMedias(accountId, fileName, page, size);
-
         return ResponseEntity.ok(
-                ApiResponse.<Page<MediaResponse>>builder()
-                        .code(HttpServletResponse.SC_OK)
-                        .message("Lấy danh sách media thành công")
-                        .data(response)
-                        .build()
+                mediaService.getMediasByCreator(fileName, page, size)
         );
     }
 }

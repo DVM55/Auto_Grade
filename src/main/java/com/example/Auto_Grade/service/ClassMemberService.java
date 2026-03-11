@@ -2,8 +2,7 @@ package com.example.Auto_Grade.service;
 
 import com.example.Auto_Grade.dto.req.ClassCodeRequest;
 import com.example.Auto_Grade.dto.res.ClassMemberResponse;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 
 public interface ClassMemberService {
     void joinClass(ClassCodeRequest request);
@@ -12,17 +11,19 @@ public interface ClassMemberService {
 
     void removeMember(Long id);
 
-    Page<ClassMemberResponse> getApprovedMembers(
+    PagingResponse<ClassMemberResponse> getApprovedMembers(
             Long classId,
             String username,
             String email,
-            Pageable pageable
+            int page,
+            int size
     );
 
-    Page<ClassMemberResponse> getPendingMembers(
+    PagingResponse<ClassMemberResponse> getPendingMembers(
             Long classId,
             String username,
             String email,
-            Pageable pageable
+            int page,
+            int size
     );
 }

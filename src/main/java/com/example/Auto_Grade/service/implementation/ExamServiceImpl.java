@@ -2,13 +2,17 @@ package com.example.Auto_Grade.service.implementation;
 
 import com.example.Auto_Grade.dto.req.ExamRequest;
 
+
 import com.example.Auto_Grade.dto.res.ExamResponse;
+import com.example.Auto_Grade.dto.res.MetaResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.entity.Account;
 import com.example.Auto_Grade.entity.Exam;
 import com.example.Auto_Grade.repository.AccountRepository;
 import com.example.Auto_Grade.repository.ExamRepository;
 import com.example.Auto_Grade.service.ExamService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -58,7 +62,7 @@ public class ExamServiceImpl implements ExamService {
     }
 
     @Override
-    public ExamResponse updateExam(Long id, ExamRequest examRequest) {
+    public void updateExam(Long id, ExamRequest examRequest) {
         Exam exam = examRepository.findById(id)
                 .orElseThrow(() ->
                         new EntityNotFoundException("Không tìm thấy kỳ thi với id: " + id)
@@ -77,13 +81,10 @@ public class ExamServiceImpl implements ExamService {
 
         exam.setName(examRequest.getName());
         examRepository.save(exam);
-
-        return mapToResponse(exam);
     }
 
     @Override
-    public Page<ExamResponse> getExams(String name, int page, int size) {
-
+    public PagingResponse<ExamResponse> getExamsByCreator(String name, int page, int size) {
         Account currentAccount = getCurrentAccount();
 
         // nếu name rỗng thì set null để query bỏ filter
@@ -101,7 +102,20 @@ public class ExamServiceImpl implements ExamService {
                         pageable
                 );
 
-        return examPage.map(this::mapToResponse);
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(examPage.getTotalElements())
+                .itemCount(examPage.getNumberOfElements())
+                .itemsPerPage(examPage.getSize())
+                .totalPages(examPage.getTotalPages())
+                .currentPage(examPage.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<ExamResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách kỳ thi thành công")
+                .data(examPage.map(this::mapToResponse).getContent())
+                .meta(meta)
+                .build();
     }
 
     private ExamResponse mapToResponse(Exam exam) {

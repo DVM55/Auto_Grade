@@ -3,6 +3,7 @@ package com.example.Auto_Grade.service;
 import com.example.Auto_Grade.dto.req.DocumentRequest;
 import com.example.Auto_Grade.dto.req.UpdateDocumentRequest;
 import com.example.Auto_Grade.dto.res.DocumentResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.entity.Document;
 import org.springframework.data.domain.Page;
 
@@ -15,6 +16,6 @@ public interface DocumentService {
 
     void updateDocument(UpdateDocumentRequest request, Long documentId);
 
-    Page<DocumentResponse> getDocuments(Long classId, int page, int size);
+    PagingResponse<DocumentResponse> getDocumentsByClassId(Long classId, int page, int size);
 
 }

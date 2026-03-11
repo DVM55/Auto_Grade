@@ -4,6 +4,8 @@ package com.example.Auto_Grade.service.implementation;
 import com.example.Auto_Grade.dto.req.ExamSessionRequest;
 import com.example.Auto_Grade.dto.req.UpdateExamSessionRequest;
 import com.example.Auto_Grade.dto.res.ExamSessionResponse;
+import com.example.Auto_Grade.dto.res.MetaResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.entity.Account;
 
 import com.example.Auto_Grade.entity.Exam;
@@ -13,6 +15,7 @@ import com.example.Auto_Grade.repository.ExamRepository;
 import com.example.Auto_Grade.repository.ExamSessionRepository;
 import com.example.Auto_Grade.service.ExamSessionService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -60,7 +63,7 @@ public class ExamSessionServiceImpl implements ExamSessionService {
     }
 
     @Override
-    public ExamSessionResponse updateExamSession(Long id, UpdateExamSessionRequest request) {
+    public void updateExamSession(Long id, UpdateExamSessionRequest request) {
 
         Account currentAccount = getCurrentAccount();
 
@@ -85,8 +88,6 @@ public class ExamSessionServiceImpl implements ExamSessionService {
         examSession.setSessionName(request.getSessionName());
 
         examSessionRepository.save(examSession);
-
-        return mapToResponse(examSession);
     }
 
     @Override
@@ -109,7 +110,7 @@ public class ExamSessionServiceImpl implements ExamSessionService {
     }
 
     @Override
-    public Page<ExamSessionResponse> getExamSessionByExamId(
+    public PagingResponse<ExamSessionResponse> getExamSessionByExamId(
             Long examId,
             String sessionName,
             int page,
@@ -141,7 +142,20 @@ public class ExamSessionServiceImpl implements ExamSessionService {
                         pageable
                 );
 
-        return examSessionPage.map(this::mapToResponse);
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(examSessionPage.getTotalElements())
+                .itemCount(examSessionPage.getNumberOfElements())
+                .itemsPerPage(examSessionPage.getSize())
+                .totalPages(examSessionPage.getTotalPages())
+                .currentPage(examSessionPage.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<ExamSessionResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách đợt thi thành công")
+                .data(examSessionPage.map(this::mapToResponse).getContent())
+                .meta(meta)
+                .build();
     }
 
     private ExamSessionResponse mapToResponse(ExamSession examSession) {

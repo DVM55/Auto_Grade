@@ -3,13 +3,11 @@ package com.example.Auto_Grade.controller;
 import com.example.Auto_Grade.dto.req.ClassCodeRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
 import com.example.Auto_Grade.dto.res.ClassMemberResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.service.ClassMemberService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -73,36 +71,21 @@ public class ClassMemberController {
 
     // ================= GET PENDING MEMBERS =================
     @GetMapping("/{classId}/pending")
-    public ResponseEntity<ApiResponse<Page<ClassMemberResponse>>> getPendingMembers(
+    public ResponseEntity<PagingResponse<ClassMemberResponse>> getPendingMembers(
             @PathVariable Long classId,
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String email,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-
-        Pageable pageable = PageRequest.of(page, size);
-
-        Page<ClassMemberResponse> result =
-                classMemberService.getPendingMembers(
-                        classId,
-                        username,
-                        email,
-                        pageable
-                );
-
         return ResponseEntity.ok(
-                ApiResponse.<Page<ClassMemberResponse>>builder()
-                        .code(HttpServletResponse.SC_OK)
-                        .message("Lấy danh sách chờ duyệt thành công")
-                        .data(result)
-                        .build()
+                classMemberService.getPendingMembers(classId, username, email, page, size)
         );
     }
 
     // ================= GET APPROVED MEMBERS =================
     @GetMapping("/{classId}/approved")
-    public ResponseEntity<ApiResponse<Page<ClassMemberResponse>>> getApprovedMembers(
+    public ResponseEntity<PagingResponse<ClassMemberResponse>> getApprovedMembers(
             @PathVariable Long classId,
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String email,
@@ -110,22 +93,10 @@ public class ClassMemberController {
             @RequestParam(defaultValue = "10") int size
     ) {
 
-        Pageable pageable = PageRequest.of(page, size);
 
-        Page<ClassMemberResponse> result =
-                classMemberService.getApprovedMembers(
-                        classId,
-                        username,
-                        email,
-                        pageable
-                );
 
         return ResponseEntity.ok(
-                ApiResponse.<Page<ClassMemberResponse>>builder()
-                        .code(HttpServletResponse.SC_OK)
-                        .message("Lấy danh sách thành viên thành công")
-                        .data(result)
-                        .build()
+                classMemberService.getApprovedMembers(classId, username, email, page, size)
         );
     }
 }

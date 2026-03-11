@@ -1,8 +1,7 @@
 package com.example.Auto_Grade.service.implementation;
 
 import com.example.Auto_Grade.dto.req.ClassRequest;
-import com.example.Auto_Grade.dto.res.ClassDetailResponse;
-import com.example.Auto_Grade.dto.res.ClassResponse;
+import com.example.Auto_Grade.dto.res.*;
 import com.example.Auto_Grade.entity.Account;
 import com.example.Auto_Grade.entity.Class;
 import com.example.Auto_Grade.enums.JoinStatus;
@@ -13,6 +12,7 @@ import com.example.Auto_Grade.repository.ClassMemberRepository;
 import com.example.Auto_Grade.repository.ClassRepository;
 import com.example.Auto_Grade.service.ClassService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,7 +34,7 @@ public class ClassServiceImpl implements ClassService {
     private final ClassMemberRepository classMemberRepository;
 
     @Override
-    public ClassResponse createClass(ClassRequest request) {
+    public void createClass(ClassRequest request) {
         Account creator = getCurrentAccount();
 
         String code = generateUniqueClassCode();
@@ -46,18 +46,10 @@ public class ClassServiceImpl implements ClassService {
         newClass.setCreator(creator);
 
         classRepository.save(newClass);
-
-        return ClassResponse.builder()
-                .id(newClass.getId())
-                .classCode(code)
-                .title(newClass.getTitle())
-                .description(newClass.getDescription())
-                .memberCount(0L)
-                .build();
     }
 
     @Override
-    public ClassResponse updateClass(ClassRequest request, Long classId) {
+    public void updateClass(ClassRequest request, Long classId) {
         Account currentUser = getCurrentAccount();
 
         Class clazz = classRepository.findById(classId)
@@ -70,17 +62,6 @@ public class ClassServiceImpl implements ClassService {
         classMapper.updateClassFromDTO(request,clazz);
 
         classRepository.save(clazz);
-
-        long approvedCount = classMemberRepository
-                .countByClassEntityIdAndStatus(classId, MemberStatus.APPROVED);
-
-        return ClassResponse.builder()
-                .id(clazz.getId())
-                .classCode(clazz.getClassCode())
-                .title(clazz.getTitle())
-                .description(clazz.getDescription())
-                .memberCount(approvedCount)
-                .build();
     }
 
     @Override
@@ -98,13 +79,7 @@ public class ClassServiceImpl implements ClassService {
     }
 
     @Override
-    public Page<ClassResponse> getClasses(
-            String title,
-            String classCode,
-            int page,
-            int size
-    ) {
-
+    public PagingResponse<ClassResponse> getClassesByCreator(String title, String classCode, int page, int size) {
         Account currentUser = getCurrentAccount();
 
         Pageable pageable =
@@ -118,8 +93,22 @@ public class ClassServiceImpl implements ClassService {
                         pageable
                 );
 
-        return classPage.map(this::mapToResponse);
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(classPage.getTotalElements())
+                .itemCount(classPage.getNumberOfElements())
+                .itemsPerPage(classPage.getSize())
+                .totalPages(classPage.getTotalPages())
+                .currentPage(classPage.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<ClassResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách lớp học thành công")
+                .data(classPage.map(this::mapToResponse).getContent())
+                .meta(meta)
+                .build();
     }
+
 
     private String generateRandomCode() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

@@ -2,6 +2,8 @@ package com.example.Auto_Grade.service.implementation;
 
 import com.example.Auto_Grade.dto.req.CandidateRequest;
 import com.example.Auto_Grade.dto.res.CandidateResponse;
+import com.example.Auto_Grade.dto.res.MetaResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.entity.Account;
 import com.example.Auto_Grade.entity.Candidate;
 import com.example.Auto_Grade.entity.Exam;
@@ -10,6 +12,7 @@ import com.example.Auto_Grade.repository.CandidateRepository;
 import com.example.Auto_Grade.repository.ExamRepository;
 import com.example.Auto_Grade.service.CandidateService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
@@ -254,7 +257,7 @@ public class CandidateServiceImpl implements CandidateService {
     // ================= UPDATE =================
     @Override
     @Transactional
-    public CandidateResponse updateCandidate(Long id, CandidateRequest request) {
+    public void updateCandidate(Long id, CandidateRequest request) {
 
         Candidate candidate = candidateRepository.findById(id)
                 .orElseThrow(() ->
@@ -277,8 +280,6 @@ public class CandidateServiceImpl implements CandidateService {
         candidate.setGender(request.getGender());
 
         candidateRepository.save(candidate);
-
-        return mapToResponse(candidate);
     }
 
     // ================= DELETE =================
@@ -319,8 +320,8 @@ public class CandidateServiceImpl implements CandidateService {
     }
 
     @Override
-    public Page<CandidateResponse> getCandidatesByExamId(
-            Long id,
+    public PagingResponse<CandidateResponse> getCandidatesByExamId(
+            Long examId,
             String fullName,
             String candidateNumber,
             String examRoom,
@@ -330,9 +331,9 @@ public class CandidateServiceImpl implements CandidateService {
             int size
     ) {
 
-        Exam exam = examRepository.findById(id)
+        Exam exam = examRepository.findById(examId)
                 .orElseThrow(() ->
-                        new EntityNotFoundException("Không tìm thấy đợt thi với id: " + id)
+                        new EntityNotFoundException("Không tìm thấy đợt thi với id: " + examId)
                 );
 
         Account currentAccount = getCurrentAccount();
@@ -349,7 +350,7 @@ public class CandidateServiceImpl implements CandidateService {
 
         Page<Candidate> candidatePage =
                 candidateRepository.findByExamIdWithFilters(
-                        id,
+                        examId,
                         fullName,
                         candidateNumber,
                         examRoom,
@@ -358,7 +359,20 @@ public class CandidateServiceImpl implements CandidateService {
                         pageable
                 );
 
-        return candidatePage.map(this::mapToResponse);
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(candidatePage.getTotalElements())
+                .itemCount(candidatePage.getNumberOfElements())
+                .itemsPerPage(candidatePage.getSize())
+                .totalPages(candidatePage.getTotalPages())
+                .currentPage(candidatePage.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<CandidateResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách thí sinh thành công")
+                .data(candidatePage.map(this::mapToResponse).getContent())
+                .meta(meta)
+                .build();
     }
 
     @Override
