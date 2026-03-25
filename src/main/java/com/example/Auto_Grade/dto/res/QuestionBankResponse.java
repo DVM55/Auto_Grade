@@ -17,6 +17,8 @@ public class QuestionBankResponse {
     private QuestionType questionType;
     private String mediaUrl;
     private MediaType mediaType;
+    private Long groupQuestionId;
+    private Long categoryQuestionId;
     private String groupQuestionName;
     private String categoryQuestionName;
     // Cho SINGLE_CHOICE / MULTIPLE_CHOICE

@@ -3,14 +3,13 @@ package com.example.Auto_Grade.controller;
 import com.example.Auto_Grade.dto.req.CategoryQuestionRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
 import com.example.Auto_Grade.dto.res.CategoryQuestionResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.service.CategoryQuestionService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/category-question")
@@ -35,13 +34,14 @@ public class CategoryQuestionController {
 
     // ───────────────────── GET MY CATEGORY ─────────────────────
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CategoryQuestionResponse>>> getMyCategories() {
-
-        return ResponseEntity.ok(ApiResponse.<List<CategoryQuestionResponse>>builder()
-                .code(HttpServletResponse.SC_OK)
-                .message("Lấy danh sách danh mục thành công")
-                .data(categoryQuestionService.getAllCategoryQuestionByCreatorId())
-                .build());
+    public ResponseEntity<PagingResponse<CategoryQuestionResponse>> getCategories(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String name
+    ) {
+        return ResponseEntity.ok(
+                categoryQuestionService.getAllCategoryQuestionByCreatorId(page, size, name)
+        );
     }
 
     // ───────────────────── UPDATE ─────────────────────

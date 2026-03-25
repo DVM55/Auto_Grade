@@ -2,19 +2,27 @@ package com.example.Auto_Grade.service.implementation;
 
 import com.example.Auto_Grade.dto.req.CategoryQuestionRequest;
 import com.example.Auto_Grade.dto.res.CategoryQuestionResponse;
+import com.example.Auto_Grade.dto.res.MetaResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.entity.Account;
 import com.example.Auto_Grade.entity.CategoryQuestion;
+
 import com.example.Auto_Grade.repository.AccountRepository;
 import com.example.Auto_Grade.repository.CategoryQuestionRepository;
 import com.example.Auto_Grade.service.CategoryQuestionService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -82,15 +90,58 @@ public class CategoryQuestionServiceImpl implements CategoryQuestionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CategoryQuestionResponse> getAllCategoryQuestionByCreatorId() {
+    public PagingResponse<CategoryQuestionResponse> getAllCategoryQuestionByCreatorId(
+            int page,
+            int size,
+            String name
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+
         Account account = getCurrentAccount();
 
-        List<CategoryQuestion> categories =
-                categoryQuestionRepository.findAllByCreatorId(account.getId());
+        String keyword = normalizeKeyword(name);
 
-        return categories.stream()
-                .map(this::mapToResponse)
-                .toList();
+        Page<CategoryQuestion> categoryPage;
+
+        if (!hasAccent(keyword)) {
+            // không dấu
+            categoryPage = categoryQuestionRepository.findAllByCreatorId(account.getId(), keyword, pageable);
+        } else {
+            categoryPage = categoryQuestionRepository.searchWithAccent(account.getId(), keyword, pageable);
+        }
+
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(categoryPage.getTotalElements())
+                .itemCount(categoryPage.getNumberOfElements())
+                .itemsPerPage(categoryPage.getSize())
+                .totalPages(categoryPage.getTotalPages())
+                .currentPage(categoryPage.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<CategoryQuestionResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách category thành công")
+                .data(categoryPage.map(this::mapToResponse).getContent())
+                .meta(meta)
+                .build();
+    }
+
+    public String normalizeKeyword(String str) {
+        if (str == null) return null;
+
+        return str
+                .replaceAll("\\s+", " ") // nhiều space → 1 space
+                .trim();                // bỏ space đầu cuối
+    }
+
+    public boolean hasAccent(String str) {
+        if (str == null) return false;
+
+        // normalize về dạng decomposed
+        String normalized = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
+
+        // nếu có ký tự dấu (diacritics) thì return true
+        return normalized.matches(".*\\p{InCombiningDiacriticalMarks}+.*");
     }
 
 }

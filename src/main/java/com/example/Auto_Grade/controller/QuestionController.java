@@ -1,9 +1,12 @@
 package com.example.Auto_Grade.controller;
 
 import com.example.Auto_Grade.dto.req.QuestionBankRequest;
+import com.example.Auto_Grade.dto.req.UpdateQuestionRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
 import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.dto.res.QuestionBankResponse;
+import com.example.Auto_Grade.enums.QuestionFilterMode;
+import com.example.Auto_Grade.enums.QuestionType;
 import com.example.Auto_Grade.service.QuestionService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -50,6 +53,19 @@ public class QuestionController {
                 .build());
     }
 
+    @PutMapping("/update-by-ids")
+    public ResponseEntity<ApiResponse<Void>> updateQuestionByIds(
+            @Valid @RequestBody UpdateQuestionRequest request) {
+
+        questionService.updateQuestionByIds(request);
+
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Cập nhật thành công")
+                .data(null)
+                .build());
+    }
+
     // ───────────── DELETE ─────────────
     @DeleteMapping("/{questionId}")
     public ResponseEntity<ApiResponse<Void>> delete(
@@ -74,13 +90,26 @@ public class QuestionController {
 
     @GetMapping
     public ResponseEntity<PagingResponse<QuestionBankResponse>> getQuestionBank(
+            @RequestParam(required = false) String content,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long groupId,
+            @RequestParam(required = false) QuestionType questionType,
+            @RequestParam QuestionFilterMode questionFilterMode, // bắt buộc
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
 
-        return ResponseEntity.ok(questionService.getQuestionBank(categoryId, groupId, page, size));
+        return ResponseEntity.ok(
+                questionService.getQuestion(
+                        content,
+                        categoryId,
+                        groupId,
+                        questionType,
+                        questionFilterMode,
+                        page,
+                        size
+                )
+        );
     }
 
     @GetMapping("/{questionId}")
@@ -132,5 +161,17 @@ public class QuestionController {
                         .build()
         );
     }
+
+    @DeleteMapping("/delete-by-ids")
+    public ResponseEntity<ApiResponse<Void>> deleteQuestionByIds(
+            @RequestBody List<Long> questionIds) {
+        questionService.deleteQuestionByIds(questionIds);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Xoá câu hỏi thành công")
+                .data(null)
+                .build());
+    }
+
 }
 

@@ -128,7 +128,7 @@ public class AccountController {
             @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(
-                accountService.getAccounts(Role.USER, page, size, username, email)
+                accountService.getAccounts(Role.TEACHER, page, size, username, email)
         );
     }
 }

@@ -1,5 +1,6 @@
 package com.example.Auto_Grade.dto.req;
 
+import com.example.Auto_Grade.enums.MediaType;
 import com.example.Auto_Grade.enums.QuestionType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -20,7 +21,7 @@ public class QuestionBankRequest {
     private QuestionType questionType;
 
     private String mediaObjectKey;
-    private String mediaContentType;
+    private MediaType mediaType;
 
     private Long groupQuestionId;
     private Long categoryQuestionId;

@@ -2,19 +2,25 @@ package com.example.Auto_Grade.service.implementation;
 
 import com.example.Auto_Grade.dto.req.GroupQuestionRequest;
 import com.example.Auto_Grade.dto.res.GroupQuestionResponse;
+import com.example.Auto_Grade.dto.res.MetaResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.entity.Account;
 import com.example.Auto_Grade.entity.GroupQuestion;
 import com.example.Auto_Grade.repository.AccountRepository;
 import com.example.Auto_Grade.repository.GroupQuestionRepository;
 import com.example.Auto_Grade.service.GroupQuestionService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -89,15 +95,58 @@ public class GroupQuestionServiceImpl implements GroupQuestionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<GroupQuestionResponse> getAllGroupQuestionByCreatorId() {
+    public PagingResponse<GroupQuestionResponse> getAllGroupQuestionByCreatorId(
+            int page,
+            int size,
+            String name
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
 
         Account account = getCurrentAccount();
 
-        List<GroupQuestion> groups =
-                groupRepository.findAllByCreatorId(account.getId());
+        String keyword = normalizeKeyword(name);
 
-        return groups.stream()
-                .map(this::mapToResponse)
-                .toList();
+        Page<GroupQuestion> groupPage;
+
+       if (hasAccent(keyword)) {
+            // có dấu
+            groupPage = groupRepository.searchWithAccent(account.getId(), keyword, pageable);
+        } else {
+            // không dấu
+            groupPage = groupRepository.findAllByCreatorId(account.getId(), keyword, pageable);
+        }
+
+        MetaResponse meta = MetaResponse.builder()
+                .totalItems(groupPage.getTotalElements())
+                .itemCount(groupPage.getNumberOfElements())
+                .itemsPerPage(groupPage.getSize())
+                .totalPages(groupPage.getTotalPages())
+                .currentPage(groupPage.getNumber() + 1)
+                .build();
+
+        return PagingResponse.<GroupQuestionResponse>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Lấy danh sách group thành công")
+                .data(groupPage.map(this::mapToResponse).getContent())
+                .meta(meta)
+                .build();
+    }
+
+    public String normalizeKeyword(String str) {
+        if (str == null) return null;
+
+        return str
+                .replaceAll("\\s+", " ") // nhiều space → 1 space
+                .trim();                // bỏ space đầu cuối
+    }
+
+    public boolean hasAccent(String str) {
+        if (str == null) return false;
+
+        // normalize về dạng decomposed
+        String normalized = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
+
+        // nếu có ký tự dấu (diacritics) thì return true
+        return normalized.matches(".*\\p{InCombiningDiacriticalMarks}+.*");
     }
 }

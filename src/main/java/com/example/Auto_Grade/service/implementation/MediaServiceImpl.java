@@ -77,6 +77,7 @@ public class MediaServiceImpl implements MediaService {
                             .createdBy(currentUser)
                             .fileName(req.getFileName())
                             .objectKey(req.getObjectKey())
+                            .mediaType(parseMediaType(req.getContentType()))
                             .contentType(contentType)
                             .build();
                 })
@@ -104,12 +105,12 @@ public class MediaServiceImpl implements MediaService {
     }
 
     @Override
-    public PagingResponse<MediaResponse> getMediasByCreator( String fileName, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    public PagingResponse<MediaResponse> getMediasByCreator( String fileName, MediaType mediaType, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
 
         Long accountId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        Page<Media> mediaPage = mediaRepository.getMedias(accountId, fileName, pageable);
+        Page<Media> mediaPage = mediaRepository.getMedias(accountId, fileName, mediaType, pageable);
 
         MetaResponse meta = MetaResponse.builder()
                 .totalItems(mediaPage.getTotalElements())
@@ -138,6 +139,24 @@ public class MediaServiceImpl implements MediaService {
         mediaRepository.deleteAll(medias);
     }
 
+    @Override
+    @Transactional
+    public void deleteAllByMediaType(MediaType mediaType) {
+        Long accountId = (Long) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
+
+        mediaRepository.deleteByMediaTypeAndAccountId(mediaType, accountId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteMediasByIds(List<Long> mediaIds) {
+        Long accountId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        mediaRepository.deleteByIdsAndAccountId(mediaIds, accountId);
+    }
+
     public MediaResponse toResponse(Media media) {
         return MediaResponse.builder()
                 .id(media.getId())
@@ -145,16 +164,12 @@ public class MediaServiceImpl implements MediaService {
                 .fileName(media.getFileName())
                 .contentType(media.getContentType())
                 .objectKey(media.getObjectKey())
-                .mediaType(parseMediaType(media.getContentType()))
+                .mediaType(media.getMediaType())
                 .updatedAt(media.getUpdatedAt())
                 .build();
     }
 
     private MediaType parseMediaType(String contentType) {
-        if (contentType == null || contentType.isBlank()) {
-            return null;
-        }
-
         if (contentType.startsWith("image/")) {
             return MediaType.IMAGE;
         }

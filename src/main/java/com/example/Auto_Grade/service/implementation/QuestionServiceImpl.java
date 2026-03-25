@@ -4,9 +4,11 @@ import com.example.Auto_Grade.dto.req.QuestionOptionRequest;
 import com.example.Auto_Grade.dto.req.QuestionBankRequest;
 import com.example.Auto_Grade.dto.req.ShortAnswerOptionRequest;
 
+import com.example.Auto_Grade.dto.req.UpdateQuestionRequest;
 import com.example.Auto_Grade.dto.res.*;
 import com.example.Auto_Grade.entity.*;
-import com.example.Auto_Grade.enums.MediaType;
+
+import com.example.Auto_Grade.enums.QuestionFilterMode;
 import com.example.Auto_Grade.enums.QuestionType;
 import com.example.Auto_Grade.integration.minio.MinioChannel;
 import com.example.Auto_Grade.repository.*;
@@ -118,7 +120,7 @@ public class QuestionServiceImpl implements QuestionService {
         question.setContent(request.getContent());
         question.setQuestionType(request.getQuestionType());
         question.setMediaObjectKey(request.getMediaObjectKey());
-        question.setMediaContentType(request.getMediaContentType());
+        question.setMediaType(request.getMediaType());
 
         if (request.getGroupQuestionId() != null) {
             GroupQuestion group = groupQuestionRepository.findById(request.getGroupQuestionId())
@@ -176,7 +178,7 @@ public class QuestionServiceImpl implements QuestionService {
                     .content(request.getContent().trim())
                     .questionType(request.getQuestionType())
                     .mediaObjectKey(request.getMediaObjectKey())
-                    .mediaContentType(request.getMediaContentType())
+                    .mediaType(request.getMediaType())
                     .creator(creator)
                     .groupQuestion(group)
                     .categoryQuestion(category)
@@ -199,21 +201,24 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public PagingResponse<QuestionBankResponse> getQuestionBank(
-            Long categoryId,
-            Long groupId,
-            int page,
-            int size
-    ) {
-
+    @Transactional
+    public PagingResponse<QuestionBankResponse> getQuestion(String content, Long categoryId, Long groupId, QuestionType questionType, QuestionFilterMode questionFilterMode, int page, int size) {
         Long creatorId = (Long) SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getPrincipal();
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Question> questionPage;
 
-        Page<Question> questionPage =
-                questionRepository.searchQuestionBank(creatorId, categoryId, groupId, pageable);
+        String keyword = normalizeKeyword(content);
+
+        if (hasAccent(keyword)) {
+            // có dấu
+            questionPage = questionRepository.searchWithAccent(creatorId, keyword, categoryId, groupId, questionType, questionFilterMode.name(), pageable);
+        } else {
+            // không dấu
+            questionPage = questionRepository.searchQuestions(creatorId, keyword, categoryId, groupId, questionType, questionFilterMode.name(), pageable);
+        }
 
         MetaResponse meta = MetaResponse.builder()
                 .totalItems(questionPage.getTotalElements())
@@ -230,6 +235,50 @@ public class QuestionServiceImpl implements QuestionService {
                 .meta(meta)
                 .build();
     }
+
+    @Override
+    @Transactional
+    public void deleteQuestionByIds(List<Long> ids) {
+        Long creatorId = (Long) SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getPrincipal();
+
+        questionRepository.deleteQuestionByIdsAndCreatorId(ids, creatorId);
+    }
+
+    @Override
+    @Transactional
+    public void updateQuestionByIds(UpdateQuestionRequest request) {
+        Long creatorId = (Long) SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getPrincipal();
+
+
+
+        CategoryQuestion category = null;
+        GroupQuestion group = null;
+
+        if (request.getGroupId() != null) {
+            group = groupQuestionRepository.findById(request.getGroupId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Không tìm thấy nhóm câu hỏi với id: " + request.getGroupId()));
+
+        }
+
+        if (request.getCategoryId() != null) {
+              category = categoryQuestionRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Không tìm thấy danh mục câu hỏi với id: " + request.getCategoryId()));
+        }
+
+        questionRepository.updateQuestionByIdsAndCreatorId(
+                request.getQuestionId(),
+                category,
+                group,
+                creatorId
+        );
+    }
+
 
     @Override
     public QuestionBankResponse getQuestionBankById(Long questionId) {
@@ -422,7 +471,13 @@ public class QuestionServiceImpl implements QuestionService {
                 .content(question.getContent())
                 .questionType(question.getQuestionType())
                 .mediaUrl(minioChannel.getPresignedUrlSafe(question.getMediaObjectKey(), 3600))
-                .mediaType(parseMediaType(question.getMediaContentType()))
+                .mediaType(question.getMediaType())
+                .categoryQuestionId(question.getCategoryQuestion() != null
+                        ? question.getCategoryQuestion().getId()
+                        : null)
+                .groupQuestionId(question.getGroupQuestion() != null
+                        ? question.getGroupQuestion().getId()
+                        : null)
                 .groupQuestionName(
                         question.getGroupQuestion() != null
                                 ? question.getGroupQuestion().getName()
@@ -457,26 +512,6 @@ public class QuestionServiceImpl implements QuestionService {
                 .build();
     }
 
-    private MediaType parseMediaType(String contentType) {
-        if (contentType == null || contentType.isBlank()) {
-            return null;
-        }
-
-        if (contentType.startsWith("image/")) {
-            return MediaType.IMAGE;
-        }
-
-        if (contentType.startsWith("video/")) {
-            return MediaType.VIDEO;
-        }
-
-        if (contentType.startsWith("audio/")) {
-            return MediaType.AUDIO;
-        }
-
-        return null;
-    }
-
     private boolean isRowEmpty(Row row) {
 
         for (int i = 0; i < 6; i++) {
@@ -506,5 +541,23 @@ public class QuestionServiceImpl implements QuestionService {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return accountRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy tài khoản với id: " + userId));
+    }
+
+    public String normalizeKeyword(String str) {
+        if (str == null) return null;
+
+        return str
+                .replaceAll("\\s+", " ") // nhiều space → 1 space
+                .trim();                // bỏ space đầu cuối
+    }
+
+    public boolean hasAccent(String str) {
+        if (str == null) return false;
+
+        // normalize về dạng decomposed
+        String normalized = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD);
+
+        // nếu có ký tự dấu (diacritics) thì return true
+        return normalized.matches(".*\\p{InCombiningDiacriticalMarks}+.*");
     }
 }

@@ -3,6 +3,7 @@ package com.example.Auto_Grade.controller;
 import com.example.Auto_Grade.dto.req.GroupQuestionRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
 import com.example.Auto_Grade.dto.res.GroupQuestionResponse;
+import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.service.GroupQuestionService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -10,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/group-question")
@@ -35,13 +35,14 @@ public class GroupQuestionController {
 
     // ───────────────────── GET MY GROUP ─────────────────────
     @GetMapping
-    public ResponseEntity<ApiResponse<List<GroupQuestionResponse>>> getMyGroups() {
-
-        return ResponseEntity.ok(ApiResponse.<List<GroupQuestionResponse>>builder()
-                .code(HttpServletResponse.SC_OK)
-                .message("Lấy danh sách nhóm câu hỏi thành công")
-                .data(groupQuestionService.getAllGroupQuestionByCreatorId())
-                .build());
+    public ResponseEntity<PagingResponse<GroupQuestionResponse>> getMyGroups(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String name
+    ) {
+        return ResponseEntity.ok(
+                groupQuestionService.getAllGroupQuestionByCreatorId(page, size, name)
+        );
     }
 
     // ───────────────────── UPDATE ─────────────────────

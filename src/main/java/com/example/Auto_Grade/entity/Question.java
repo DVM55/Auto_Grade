@@ -1,5 +1,6 @@
 package com.example.Auto_Grade.entity;
 
+import com.example.Auto_Grade.enums.MediaType;
 import com.example.Auto_Grade.enums.QuestionType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -34,8 +35,9 @@ public class Question extends BaseEntity {
     @Column(name = "media_object_key", length = 500)
     private String mediaObjectKey;
 
-    @Column(name = "media_content_type", length = 150)
-    private String mediaContentType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "media_type", length = 20)
+    private MediaType mediaType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quiz_id")
