@@ -14,10 +14,8 @@ import java.util.List;
 @Builder
 public class QuestionBankRequest {
 
-    @NotBlank(message = "Nội dung câu hỏi không được để trống")
     private String content;
 
-    @NotNull(message = "Loại câu hỏi không được để trống")
     private QuestionType questionType;
 
     private String mediaObjectKey;

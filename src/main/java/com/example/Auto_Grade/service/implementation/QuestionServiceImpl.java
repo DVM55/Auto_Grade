@@ -36,7 +36,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -68,35 +70,101 @@ public class QuestionServiceImpl implements QuestionService {
      * - SHORT_ANSWER → dùng correctAnswers (danh sách chuỗi, tối thiểu 1)
      */
     private void applyQuestionsDetails(Question question, QuestionBankRequest request) {
+
         QuestionType type = request.getQuestionType();
 
+        // ===================== TRẮC NGHIỆM =====================
         if (type == QuestionType.SINGLE_CHOICE || type == QuestionType.MULTIPLE_CHOICE) {
-            // SINGLE_CHOICE: chỉ 1 đáp án đúng
-            if (type == QuestionType.SINGLE_CHOICE) {
-                long correctCount = request.getOptions().stream()
-                        .filter(o -> Boolean.TRUE.equals(o.getIsCorrect())).count();
-                if (correctCount != 1) {
-                    throw new IllegalArgumentException(
-                            "Câu hỏi chọn 1 kết quả chỉ có duy nhất 1 đáp án đúng");
+
+            if (request.getOptions() == null || request.getOptions().size() < 2) {
+                throw new IllegalArgumentException("Cần ít nhất 2 đáp án");
+            }
+
+            // ✅ validate nội dung + trùng
+            Set<String> seen = new HashSet<>();
+
+            for (int i = 0; i < request.getOptions().size(); i++) {
+                QuestionOptionRequest opt = request.getOptions().get(i);
+
+                if (opt.getOptionText() == null || opt.getOptionText().trim().isEmpty()) {
+                    throw new IllegalArgumentException("Một đáp án đang để trống");
+                }
+
+                String value = opt.getOptionText().trim();
+
+                if (!seen.add(value)) {
+                    throw new IllegalArgumentException("Dữ liệu đáp án bị trùng");
                 }
             }
 
-            // Xoá options cũ, thêm mới
+            // ✅ SINGLE_CHOICE
+            if (type == QuestionType.SINGLE_CHOICE) {
+                long correctCount = request.getOptions().stream()
+                        .filter(o -> Boolean.TRUE.equals(o.getIsCorrect()))
+                        .count();
+
+                if (correctCount != 1) {
+                    throw new IllegalArgumentException("Chỉ được có 1 đáp án đúng duy nhất");
+                }
+            }
+
+            // ✅ MULTIPLE_CHOICE
+            if (type == QuestionType.MULTIPLE_CHOICE) {
+                boolean hasCorrect = request.getOptions().stream()
+                        .anyMatch(o -> Boolean.TRUE.equals(o.getIsCorrect()));
+
+                if (!hasCorrect) {
+                    throw new IllegalArgumentException("Phải có ít nhất 1 đáp án đúng");
+                }
+            }
+
+            // ✅ clear + flush
             question.getOptions().clear();
+            question.getShortAnswerOptions().clear();
+            questionRepository.saveAndFlush(question);
+
+            // ✅ add lại
             for (QuestionOptionRequest optReq : request.getOptions()) {
                 QuestionOption opt = QuestionOption.builder()
                         .optionText(optReq.getOptionText().trim())
                         .isCorrect(Boolean.TRUE.equals(optReq.getIsCorrect()))
                         .question(question)
                         .build();
+
                 question.getOptions().add(opt);
             }
-            // Xoá short answer nếu có
-            question.getShortAnswerOptions().clear();
 
-        } else if (type == QuestionType.SHORT_ANSWER) {
-            // Xoá short answer cũ, thêm mới
+        }
+
+        // ===================== SHORT ANSWER =====================
+        else if (type == QuestionType.SHORT_ANSWER) {
+
+            if (request.getCorrectAnswers() == null || request.getCorrectAnswers().isEmpty()) {
+                throw new IllegalArgumentException("Phải có ít nhất 1 đáp án");
+            }
+
+            Set<String> seen = new HashSet<>();
+
+            for (int i = 0; i < request.getCorrectAnswers().size(); i++) {
+                ShortAnswerOptionRequest ans = request.getCorrectAnswers().get(i);
+
+                if (ans.getAnswer() == null || ans.getAnswer().trim().isEmpty()) {
+                    throw new IllegalArgumentException("Một đáp án đang để trống");
+                }
+
+                String value = ans.getAnswer().trim();
+
+                if (!seen.add(value)) {
+                    throw new IllegalArgumentException("Dữ liệu đáp án bị trùng");
+                }
+            }
+
+            // ✅ clear + flush
             question.getShortAnswerOptions().clear();
+            question.getOptions().clear();
+            questionRepository.saveAndFlush(question);
+
+            // ✅ add lại
             for (ShortAnswerOptionRequest ans : request.getCorrectAnswers()) {
                 ShortAnswerOption sao = ShortAnswerOption.builder()
                         .answerText(ans.getAnswer().trim())
@@ -105,23 +173,49 @@ public class QuestionServiceImpl implements QuestionService {
 
                 question.getShortAnswerOptions().add(sao);
             }
-            // Xoá options trắc nghiệm nếu có
-            question.getOptions().clear();
+        }
+    }
+
+    private void applyQuestionsDetailsWithIndex(Question question,
+                                                QuestionBankRequest request,
+                                                int questionIndex) {
+        try {
+            applyQuestionsDetails(question, request);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    e.getMessage() + " ở câu " + questionIndex
+            );
         }
     }
 
     @Override
     @Transactional
     public void updateQuestion(Long questionId, QuestionBankRequest request) {
+
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Không tìm thấy câu hỏi với id: " + questionId));
 
-        question.setContent(request.getContent());
+        // ✅ validate content OR media
+        boolean hasContent = request.getContent() != null && !request.getContent().trim().isEmpty();
+        boolean hasMedia = request.getMediaObjectKey() != null && !request.getMediaObjectKey().trim().isEmpty();
+
+        if (!hasContent && !hasMedia) {
+            throw new IllegalArgumentException("Câu hỏi phải có nội dung hoặc file");
+        }
+
+        // ✅ validate questionType
+        if (request.getQuestionType() == null) {
+            throw new IllegalArgumentException("Loại câu hỏi không được để trống");
+        }
+
+        // ✅ set dữ liệu (tránh NPE)
+        question.setContent(hasContent ? request.getContent().trim() : null);
         question.setQuestionType(request.getQuestionType());
-        question.setMediaObjectKey(request.getMediaObjectKey());
+        question.setMediaObjectKey(hasMedia ? request.getMediaObjectKey() : null);
         question.setMediaType(request.getMediaType());
 
+        // ✅ group
         if (request.getGroupQuestionId() != null) {
             GroupQuestion group = groupQuestionRepository.findById(request.getGroupQuestionId())
                     .orElseThrow(() -> new EntityNotFoundException(
@@ -131,6 +225,7 @@ public class QuestionServiceImpl implements QuestionService {
             question.setGroupQuestion(null);
         }
 
+        // ✅ category
         if (request.getCategoryQuestionId() != null) {
             CategoryQuestion category = categoryQuestionRepository.findById(request.getCategoryQuestionId())
                     .orElseThrow(() -> new EntityNotFoundException(
@@ -140,7 +235,9 @@ public class QuestionServiceImpl implements QuestionService {
             question.setCategoryQuestion(null);
         }
 
+        // ✅ validate + set options / answers
         applyQuestionsDetails(question, request);
+
         questionRepository.save(question);
     }
 
@@ -158,11 +255,32 @@ public class QuestionServiceImpl implements QuestionService {
     @Transactional
     public void createQuestionBank(List<QuestionBankRequest> requests) {
 
+        if (requests == null || requests.isEmpty()) {
+            throw new IllegalArgumentException("Danh sách câu hỏi không được rỗng");
+        }
+
         Account creator = getCurrentAccount();
 
         List<Question> questions = new ArrayList<>();
 
+        int questionIndex = 1;
+
         for (QuestionBankRequest request : requests) {
+
+            boolean hasContent = request.getContent() != null && !request.getContent().trim().isEmpty();
+            boolean hasMedia = request.getMediaObjectKey() != null && !request.getMediaObjectKey().trim().isEmpty();
+
+            if (!hasContent && !hasMedia) {
+                throw new IllegalArgumentException(
+                        "Câu hỏi phải có nội dung hoặc file ở câu " + questionIndex
+                );
+            }
+
+            if (request.getQuestionType() == null) {
+                throw new IllegalArgumentException(
+                        "Loại câu hỏi không được để trống ở câu " + questionIndex
+                );
+            }
 
             GroupQuestion group = request.getGroupQuestionId() == null ? null :
                     groupQuestionRepository.findById(request.getGroupQuestionId())
@@ -175,18 +293,20 @@ public class QuestionServiceImpl implements QuestionService {
                                     "Không tìm thấy danh mục câu hỏi với id: " + request.getCategoryQuestionId()));
 
             Question question = Question.builder()
-                    .content(request.getContent().trim())
+                    .content(hasContent ? request.getContent().trim() : null)
                     .questionType(request.getQuestionType())
-                    .mediaObjectKey(request.getMediaObjectKey())
+                    .mediaObjectKey(hasMedia ? request.getMediaObjectKey() : null)
                     .mediaType(request.getMediaType())
                     .creator(creator)
                     .groupQuestion(group)
                     .categoryQuestion(category)
                     .build();
 
-            applyQuestionsDetails(question, request);
+            applyQuestionsDetailsWithIndex(question, request, questionIndex);
 
             questions.add(question);
+
+            questionIndex++;
         }
 
         questionRepository.saveAll(questions);
@@ -471,6 +591,7 @@ public class QuestionServiceImpl implements QuestionService {
                 .content(question.getContent())
                 .questionType(question.getQuestionType())
                 .mediaUrl(minioChannel.getPresignedUrlSafe(question.getMediaObjectKey(), 3600))
+                .objectKey(question.getMediaObjectKey())
                 .mediaType(question.getMediaType())
                 .categoryQuestionId(question.getCategoryQuestion() != null
                         ? question.getCategoryQuestion().getId()

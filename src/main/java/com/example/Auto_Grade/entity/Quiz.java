@@ -1,5 +1,6 @@
 package com.example.Auto_Grade.entity;
 
+import com.example.Auto_Grade.enums.QuizStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -59,7 +60,13 @@ public class Quiz extends BaseEntity {
     @JsonIgnore
     private Class classEntity;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    @Builder.Default
+    private QuizStatus status = QuizStatus.DRAFT;
+
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     @JsonIgnore
     private List<Question> questions = new ArrayList<>();
 }

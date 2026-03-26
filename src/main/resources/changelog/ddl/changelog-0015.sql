@@ -1,0 +1,2 @@
+ALTER TABLE questions
+    ALTER COLUMN content DROP NOT NULL;
