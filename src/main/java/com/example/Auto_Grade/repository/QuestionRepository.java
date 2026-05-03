@@ -18,6 +18,30 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     List<Question> findAllByCreatorId(Long creatorId);
 
     @Query("""
+        SELECT COUNT(q) FROM Question q
+        WHERE q.creator.id = :creatorId
+            AND (:categoryId IS NULL OR q.categoryQuestion.id = :categoryId)
+            AND (:groupId     IS NULL OR q.groupQuestion.id   = :groupId)
+    """)
+    long countByFilters(
+            @Param("creatorId") Long creatorId,
+            @Param("categoryId") Long categoryId,
+            @Param("groupId")    Long groupId
+    );
+
+    @Query("""
+        SELECT q FROM Question q
+        WHERE q.creator.id = :creatorId
+            AND (:categoryId IS NULL OR q.categoryQuestion.id = :categoryId)
+            AND (:groupId     IS NULL OR q.groupQuestion.id   = :groupId)
+    """)
+    List<Question> findByFilters(
+            @Param("creatorId") Long creatorId,
+            @Param("categoryId") Long categoryId,
+            @Param("groupId")    Long groupId
+    );
+
+    @Query("""
     SELECT q FROM Question q
     WHERE q.creator.id = :creatorId
     AND (

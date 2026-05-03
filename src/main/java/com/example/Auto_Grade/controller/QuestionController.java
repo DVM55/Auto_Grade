@@ -127,31 +127,13 @@ public class QuestionController {
     }
 
     @PostMapping(
-            value = "/import-word",
+            value = "/import-file",
             consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public ResponseEntity<ApiResponse<List<QuestionBankRequest>>> importWord(
+    public ResponseEntity<ApiResponse<List<QuestionBankRequest>>> importFile(
             @RequestParam("file") MultipartFile file) {
 
-        List<QuestionBankRequest> questions = questionService.importWord(file);
-
-        return ResponseEntity.ok(
-                ApiResponse.<List<QuestionBankRequest>>builder()
-                        .code(HttpServletResponse.SC_OK)
-                        .message("Import câu hỏi thành công")
-                        .data(questions)
-                        .build()
-        );
-    }
-
-    @PostMapping(
-            value = "/import-excel",
-            consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public ResponseEntity<ApiResponse<List<QuestionBankRequest>>> importExcel(
-            @RequestParam("file") MultipartFile file) {
-
-        List<QuestionBankRequest> questions = questionService.importExcel(file);
+        List<QuestionBankRequest> questions = questionService.importFile(file);
 
         return ResponseEntity.ok(
                 ApiResponse.<List<QuestionBankRequest>>builder()

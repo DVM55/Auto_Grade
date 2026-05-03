@@ -1,5 +1,6 @@
 package com.example.Auto_Grade.entity;
 
+import com.example.Auto_Grade.enums.QuizAccessType;
 import com.example.Auto_Grade.enums.QuizStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -25,7 +26,7 @@ public class Quiz extends BaseEntity {
     @Column(name = "quiz_code", nullable = false, unique = true, length = 20)
     private String quizCode;
 
-    @Column(name = "title", nullable = false, length = 255)
+    @Column(name = "title", nullable = false)
     private String title;
 
     @Column(name = "description", columnDefinition = "TEXT")
@@ -55,19 +56,35 @@ public class Quiz extends BaseEntity {
     @JsonIgnore
     private Account creator;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "class_id")
+    @ManyToMany
+    @JoinTable(
+            name = "quiz_classes",
+            joinColumns = @JoinColumn(name = "quiz_id"),
+            inverseJoinColumns = @JoinColumn(name = "class_id")
+    )
+    @Builder.Default
     @JsonIgnore
-    private Class classEntity;
+    private List<Class> classes = new ArrayList<>();
+
+    @Column(name = "auto_score", nullable = false)
+    @Builder.Default
+    private Boolean autoScore = true;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
     private QuizStatus status = QuizStatus.DRAFT;
 
+    @Column(name = "is_random", nullable = false)
+    private Boolean isRandom = false;
+
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @JsonIgnore
     private List<Question> questions = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private QuizAccessType accessType;
 }
 

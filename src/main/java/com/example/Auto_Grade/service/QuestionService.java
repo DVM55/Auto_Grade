@@ -35,8 +35,6 @@ public interface QuestionService {
 
     QuestionBankResponse getQuestionBankById(Long questionId);
 
-    List<QuestionBankRequest> importWord(MultipartFile file);
-
-    List<QuestionBankRequest> importExcel(MultipartFile file);
+    List<QuestionBankRequest> importFile(MultipartFile file);
 }
 

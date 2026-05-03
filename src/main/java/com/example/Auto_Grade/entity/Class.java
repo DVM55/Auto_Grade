@@ -40,4 +40,8 @@ public class Class extends BaseEntity{
     )
     @JsonIgnore
     private List<ClassMember> members = new ArrayList<>();
+
+    @ManyToMany(mappedBy = "classes")
+    @JsonIgnore
+    private List<Quiz> quizzes = new ArrayList<>();
 }

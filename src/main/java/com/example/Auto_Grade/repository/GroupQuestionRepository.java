@@ -37,7 +37,5 @@ public interface GroupQuestionRepository extends JpaRepository<GroupQuestion, Lo
             @Param("name") String name,
             Pageable pageable
     );
-
-
 }
 

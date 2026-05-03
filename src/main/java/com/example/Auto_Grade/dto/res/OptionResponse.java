@@ -1,14 +1,11 @@
 package com.example.Auto_Grade.dto.res;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 
-
 @Data
-@Builder
 @AllArgsConstructor
-public class ShortAnswerOptionResponse {
+public class OptionResponse {
     private Long id;
-    private String answer;
+    private String optionText;
 }
