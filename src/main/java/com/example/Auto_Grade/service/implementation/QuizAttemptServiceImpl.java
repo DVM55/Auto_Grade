@@ -494,7 +494,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
             case SHORT_ANSWER -> {
                 if (answer.getAnswerText() == null || answer.getAnswerText().isBlank())
                     yield false;
-                String ans = answer.getAnswerText().trim().replaceAll("\\s+", " ").toLowerCase();
+                String ans = answer.getAnswerText().trim().replaceAll("\\s+", " ");
                 yield question.getShortAnswerOptions().stream()
                         .anyMatch(o -> o.getAnswerText().equals(ans));
             }

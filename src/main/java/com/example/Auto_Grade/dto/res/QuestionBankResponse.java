@@ -15,6 +15,7 @@ public class QuestionBankResponse {
     private Long id;
     private String content;
     private QuestionType questionType;
+    private String explanation;
     private String mediaUrl;
     private MediaType mediaType;
     private String objectKey;

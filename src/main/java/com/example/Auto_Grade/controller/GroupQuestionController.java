@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -20,6 +21,7 @@ public class GroupQuestionController {
     private final GroupQuestionService groupQuestionService;
 
     // ───────────────────── CREATE ─────────────────────
+    @PreAuthorize("hasRole('TEACHER')")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> create(
             @Valid @RequestBody GroupQuestionRequest request) {

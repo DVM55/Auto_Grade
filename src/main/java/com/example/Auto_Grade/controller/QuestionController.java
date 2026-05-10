@@ -1,5 +1,6 @@
 package com.example.Auto_Grade.controller;
 
+import com.example.Auto_Grade.dto.req.GenerateQuestionMultipartRequest;
 import com.example.Auto_Grade.dto.req.QuestionBankRequest;
 import com.example.Auto_Grade.dto.req.UpdateQuestionRequest;
 import com.example.Auto_Grade.dto.res.ApiResponse;
@@ -7,11 +8,15 @@ import com.example.Auto_Grade.dto.res.PagingResponse;
 import com.example.Auto_Grade.dto.res.QuestionBankResponse;
 import com.example.Auto_Grade.enums.QuestionFilterMode;
 import com.example.Auto_Grade.enums.QuestionType;
+import com.example.Auto_Grade.service.QuestionExplanationService;
+import com.example.Auto_Grade.service.QuestionGenerationService;
 import com.example.Auto_Grade.service.QuestionService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,9 +29,12 @@ import java.util.List;
 public class QuestionController {
 
     private final QuestionService questionService;
+    private final QuestionGenerationService questionGenerationService;
+    private final QuestionExplanationService questionExplanationService;
 
     // ───────────── CREATE ────────────
     @PostMapping
+    @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<ApiResponse<Void>> createQuestionBank(
             @Valid @RequestBody List<QuestionBankRequest> requests) {
 
@@ -126,9 +134,20 @@ public class QuestionController {
                 .build());
     }
 
+    @GetMapping("/{questionId}/explanation")
+    public ResponseEntity<ApiResponse<String>> explainQuestion(@PathVariable Long questionId) {
+        String explanation = questionExplanationService.explainQuestion(questionId);
+
+        return ResponseEntity.ok(ApiResponse.<String>builder()
+                .code(HttpServletResponse.SC_OK)
+                .message("Giai thich cau hoi thanh cong")
+                .data(explanation)
+                .build());
+    }
+
     @PostMapping(
             value = "/import-file",
-            consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<ApiResponse<List<QuestionBankRequest>>> importFile(
             @RequestParam("file") MultipartFile file) {
@@ -139,6 +158,27 @@ public class QuestionController {
                 ApiResponse.<List<QuestionBankRequest>>builder()
                         .code(HttpServletResponse.SC_OK)
                         .message("Import câu hỏi thành công")
+                        .data(questions)
+                        .build()
+        );
+    }
+
+    @PostMapping(
+            value = {
+                    "/generate-question-from-ai"
+            },
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ApiResponse<List<QuestionBankRequest>>> generateQuestionFromFile(
+            @Valid @ModelAttribute GenerateQuestionMultipartRequest request) {
+
+        List<QuestionBankRequest> questions =
+                questionGenerationService.generateQuestions(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<QuestionBankRequest>>builder()
+                        .code(HttpServletResponse.SC_OK)
+                        .message("Sinh cau hoi thanh cong")
                         .data(questions)
                         .build()
         );

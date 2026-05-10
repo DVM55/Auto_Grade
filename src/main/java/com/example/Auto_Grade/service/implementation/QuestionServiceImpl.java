@@ -212,6 +212,7 @@ public class QuestionServiceImpl implements QuestionService {
         // ✅ set dữ liệu (tránh NPE)
         question.setContent(hasContent ? request.getContent().trim() : null);
         question.setQuestionType(request.getQuestionType());
+        question.setExplanation(null);
         question.setMediaObjectKey(hasMedia ? request.getMediaObjectKey() : null);
         question.setMediaType(request.getMediaType());
 
@@ -584,6 +585,7 @@ public class QuestionServiceImpl implements QuestionService {
                 .id(question.getId())
                 .content(question.getContent())
                 .questionType(question.getQuestionType())
+                .explanation(question.getExplanation())
                 .mediaUrl(minioChannel.getPresignedUrlSafe(question.getMediaObjectKey(), 3600))
                 .objectKey(question.getMediaObjectKey())
                 .mediaType(question.getMediaType())

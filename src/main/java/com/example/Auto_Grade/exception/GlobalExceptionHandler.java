@@ -8,6 +8,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
 
@@ -33,6 +36,46 @@ public class GlobalExceptionHandler {
                 .message(e.getMessage())
                 .build();
         return ResponseEntity.internalServerError().body(exceptionResponse);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ExceptionResponse> handleResponseStatusException(ResponseStatusException e) {
+        HttpStatus status = HttpStatus.valueOf(e.getStatusCode().value());
+
+        ExceptionResponse exceptionResponse = ExceptionResponse.builder()
+                .timestamp(new Date())
+                .status(status)
+                .details(e.toString())
+                .message(e.getReason())
+                .build();
+
+        return ResponseEntity.status(status).body(exceptionResponse);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+    public ResponseEntity<ExceptionResponse> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
+        ExceptionResponse exceptionResponse = ExceptionResponse.builder()
+                .timestamp(new Date())
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .details(e.toString())
+                .message(e.getMessage())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(exceptionResponse);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ExceptionResponse> handleMissingServletRequestPartException(MissingServletRequestPartException e) {
+        ExceptionResponse exceptionResponse = ExceptionResponse.builder()
+                .timestamp(new Date())
+                .status(HttpStatus.BAD_REQUEST)
+                .details(e.toString())
+                .message("Thieu multipart part: " + e.getRequestPartName())
+                .build();
+
+        return ResponseEntity.badRequest().body(exceptionResponse);
     }
 
     @ExceptionHandler(BadCredentialsException.class)

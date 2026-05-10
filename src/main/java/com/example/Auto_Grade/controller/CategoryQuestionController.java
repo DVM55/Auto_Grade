@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,6 +20,7 @@ public class CategoryQuestionController {
     private final CategoryQuestionService categoryQuestionService;
 
     // ───────────────────── CREATE ─────────────────────
+    @PreAuthorize("hasRole('TEACHER')")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> create(
             @Valid @RequestBody CategoryQuestionRequest request) {
@@ -33,6 +35,7 @@ public class CategoryQuestionController {
     }
 
     // ───────────────────── GET MY CATEGORY ─────────────────────
+    @PreAuthorize("hasRole('TEACHER')")
     @GetMapping
     public ResponseEntity<PagingResponse<CategoryQuestionResponse>> getCategories(
             @RequestParam(defaultValue = "0") int page,
@@ -45,6 +48,7 @@ public class CategoryQuestionController {
     }
 
     // ───────────────────── UPDATE ─────────────────────
+    @PreAuthorize("hasRole('TEACHER')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> update(
             @PathVariable Long id,
@@ -60,6 +64,7 @@ public class CategoryQuestionController {
     }
 
     // ───────────────────── DELETE ─────────────────────
+    @PreAuthorize("hasRole('TEACHER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
 

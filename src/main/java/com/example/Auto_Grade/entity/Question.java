@@ -32,6 +32,9 @@ public class Question extends BaseEntity {
     @Column(name = "score")
     private Double score;
 
+    @Column(name = "explanation", columnDefinition = "TEXT")
+    private String explanation;
+
     @Column(name = "media_object_key", length = 500)
     private String mediaObjectKey;
 
