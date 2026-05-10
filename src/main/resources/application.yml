@@ -1,3 +1,7 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+server:
+  forward-headers-strategy: framework
